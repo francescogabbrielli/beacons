@@ -42,7 +42,8 @@
 							  
 							In this proejct there are two transfer services that work in a chain, linked through 
 							the smartphone: the first client is the device and the server is the smartphone 
-							app (GATT connection background server); the second client is the smartphone app (DataManager) and the server is the remote repository
+							app (GATT connection background server); the second client is the smartphone app 
+							(DataManager) and the server is the remote repository
 							   
 										  
 	1. When the app is installed a background service will start whenever the bluetooth is turned on
