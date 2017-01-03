@@ -14,8 +14,8 @@
 
 - **Server**: database and backend engine
 
-- **TransferService**: is a component running in a thread both in the DataManager and the GATT 
-	connection managing client/server data interchange when a connection is
+- **TransferService**: is a component running in a thread both in the DataManager and 
+	the GATT connection managing client/server data interchange when a connection is
 	established:
 
 		CLIENT                                  SERVER
@@ -47,7 +47,9 @@
 	(DataManager) and the server is the remote repository
 
 
-## 1. When the app is installed a background service will start whenever the bluetooth is turned on
+## 1. When the app is installed
+
+A background service will start whenever the bluetooth is turned on
 
 The purpose of the service is to discover bluetooth devices and, if they are managed by the current
 user/shipment, to connect to them establishing bidirectional GATT interaction
@@ -70,7 +72,7 @@ user/shipment, to connect to them establishing bidirectional GATT interaction
 	   |                               | SEE §3                         |
 
 
-## 2. When a device connection is established:
+## 2. When a device connection is established
 
 1. **a new GATT callback is created**
 
@@ -86,7 +88,7 @@ user/shipment, to connect to them establishing bidirectional GATT interaction
 	(*see __§0__*)
 
 
-## 3. When the device disconnects:
+## 3. When the device disconnects
 
 - Both the DataManager and the GATT data logger service are stopped istantaneously
 - Connection/Disconnection status is treated like other data and sent to the server
