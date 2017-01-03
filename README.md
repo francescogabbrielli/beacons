@@ -1,8 +1,6 @@
-# Beacons Transponder projects
+# Beacons Transponder
    								
 ## 0. Definitions
-
-- **Device**: a bluetooth low energy (BLE) device with sensors and data logger
 
 - **App**: the app running on a smartphone
 
@@ -11,6 +9,8 @@
 	when the network is available;
 	is also responsible for activating alerts and send real time notifications
 	to the user
+	
+- **Device**: a bluetooth low energy (BLE) device with sensors and data logger
 
 - **Server**: database and backend engine
 
@@ -65,25 +65,25 @@ user/shipment, to connect to them establishing bidirectional GATT interaction
 	   |<-------------------<<[Connect]|<|_YES_                         |
 	   |                               | |_NO__>[no action]             |
 	   |[Connected]>>----------------->|                                |
-	   |                               | SEE 2.                         |
+	   |                               | SEE §2                         |
 	   |[Disconnected]>>-------------->|                                |
-	   |                               | SEE 3.                         |
+	   |                               | SEE §3                         |
 
 
 ## 2. When a device connection is established:
 
-1. a new GATT callback is created 
+1. **a new GATT callback is created**
 
 	The GATT callback will register for notifications and manage interaction displaying the updated 
 	data/reading from the device sensors. The data is sent to the DataManager with extra information
 	gathered from the smartphone (like position from GPS, time, etc...)
 
-2. a background service is started to extract data from the data logger
+2. **a background service is started to extract data from the data logger**
 
 	It will begin from the pointer to the last data extracted and send it to the DataManager 
 	(without additioanl info) and update the pointer to last data. It will also attempt to remove
 	extracted data from the device. This service is very similar to the service present in the DataManager
-	(see definitions)
+	(*see __§0__*)
 
 
 ## 3. When the device disconnects:
