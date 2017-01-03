@@ -20,16 +20,18 @@
 							established:
 							
 								CLIENT                                  SERVER
-								===*=======================================*==
+								---*---------------------------------------*--
 								   |                                       |
-								   |[Send last data]---------------------->|
+								   |[Send last data]>>-------------------->|
 								   |                                       |
 								   |                                       | 1. Data received (trigger actions)
 								   |                                       | 2. Store
-								   |<------------------------[Send confirm]|
+								   |                                       |
+								   |<----------------------<<[Send confirm]|
 								   |                                       |
 								   | 1. Remove Data*                       |
 								   | 2. Update pointer to last data        |
+								   |                                       |
 								   
 								* the data removed is not necessarily the last one, to allow a recent data 
 								  buffer on the client
@@ -42,7 +44,7 @@
 							  
 							In this proejct there are two transfer services that work in a chain, linked through 
 							the smartphone: the first client is the device and the server is the smartphone 
-							app (GATT connection background server); the second client is the smartphone app 
+							app (GATT connection background server); the second client is the smartphone app
 							(DataManager) and the server is the remote repository
 							   
 										  
@@ -52,6 +54,22 @@
 		The purpose of the service is to discover bluetooth devices and, if they are managed by the current
 		user/shipment, to connect to them establishing bidirectional GATT interaction
 		
+			Device                        Smartphone                         Server
+			---*-------------------------------*--------------------------------*--
+			   |<----------<<[Discover devices]|                                |
+			   |                               |                                |
+		           |[Discovered]>>---------------->|                                |
+			   |                               | Updated info?                  |
+			   |                               | |_NO_>[Query managed]>>------->|
+			   |                               |                                | Query DB
+			   |                               |<---------------<<[Managed info]|
+			   |                               | Is Managed?                    |
+			   |<-------------------<<[Connect]|<|_YES_                         |
+			   |                               | |_NO__>[no action]             |
+			   |[Connected]>>----------------->|                                |
+			   |                               | SEE 2.                         |
+			   |[Connected]>>----------------->|                                |
+			   |                               | SEE 3.                         |
 		
 	2. When a device connection is established:
 	===========================================
