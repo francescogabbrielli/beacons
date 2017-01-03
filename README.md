@@ -87,7 +87,7 @@
 			   |                               | |_NO__>[no action]             |
 			   |[Connected]>>----------------->|                                |
 			   |                               | SEE 2.                         |
-			   |[Connected]>>----------------->|                                |
+			   |[Disconnected]>>-------------->|                                |
 			   |                               | SEE 3.                         |
 		
 	2. When a device connection is established:
@@ -107,7 +107,7 @@
 			(see definitions)
 			
 
-	3.  When the device	disconnects:
+	3.  When the device disconnects:
 	================================
 	
 		- Both the DataManager and the GATT data logger service are stopped istantaneously
