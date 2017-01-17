@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+      This file is part of Beacon Transponder.
+  
+      Beacon Transponder is free software: you can redistribute it and/or modify
+      it under the terms of the GNU General Public License as published by
+      the Free Software Foundation, either version 3 of the License, or
+      (at your option) any later version.
+  
+      Beacon Transponder is distributed in the hope that it will be useful,
+      but WITHOUT ANY WARRANTY; without even the implied warranty of
+      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+      GNU General Public License for more details.
+  
+      You should have received a copy of the GNU General Public License
+      along with Beacon Transponder.  If not, see <http://www.gnu.org/licenses/>.
+ 
+      Francesco Gabbrielli 2017
+
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="au.com.smarttrace.beacons.transponder"
+    android:versionCode="1"
+    android:versionName="0.1" >
+
+    <uses-sdk
+        android:minSdkVersion="21"
+        android:targetSdkVersion="25" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" />
+
+    <application
+        android:name=".BeaconTransponder"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name" >
+
+        <!-- android:theme="@style/Theme.AppCompat.Light.DarkActionBar" -->
+
+        <activity
+            android:name=".DeviceListActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <activity
+            android:name=".LocationActivity"
+            android:label="@string/title_activity_location" >
+        </activity>
+        
+        <!-- start DEVICE ACTIVITIES -->
+        <activity android:name="au.com.smarttrace.beacons.DeviceActivity" />
+        <activity android:name="au.com.smarttrace.tzone.humiture.TZoneActivity" />
+        <!-- end DEVICE ACTIVITIES -->
+
+        <service
+            android:name="au.com.smarttrace.beacons.BluetoothService"
+            android:exported="false" />
+
+        <receiver android:name="au.com.smarttrace.beacons.BluetoothReceiver" >
+            <intent-filter>
+                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".data.NetworkReceiver"
+            android:enabled="true"
+            android:exported="false"
+            android:permission="android.permission.ACCESS_NETWORK_STATE" >
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>
