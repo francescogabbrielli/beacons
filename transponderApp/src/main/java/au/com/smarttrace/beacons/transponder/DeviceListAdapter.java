@@ -69,9 +69,11 @@ public class DeviceListAdapter extends BaseAdapter implements DeviceListener {
 				context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		View view = inflater.inflate(R.layout.row_device, parent, false);//XXX: needed for multiple ViewStubs 
 		
-		TextView tv = (TextView) view.findViewById(R.id.device_name);
-		tv.setText(device.toString());
-		
+//		TextView tv = (TextView) view.findViewById(R.id.device_name);
+//		tv.setText(device.toString());
+
+		TextView tv;
+
 		if (device.getBattery()>=0) {
 			tv = (TextView) view.findViewById(R.id.device_battery);
 			tv.setText(String.format("%2d%%", device.getBattery()));

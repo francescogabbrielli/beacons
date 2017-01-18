@@ -15,7 +15,8 @@
       You should have received a copy of the GNU General Public License
       along with Beacon Transponder.  If not, see <http://www.gnu.org/licenses/>.
  
-      Francesco Gabbrielli 2017
+      Francesco Gabbrielli 2017
+
 -->
 <resources>
 
@@ -24,5 +25,6 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title_activity_location">LocationActivity</string>
     <string name="hello_world">Hello world!</string>
+    <string name="title_gps">Location Service</string>
 
 </resources>

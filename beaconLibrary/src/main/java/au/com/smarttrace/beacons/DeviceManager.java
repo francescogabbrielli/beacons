@@ -35,6 +35,9 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.util.Log;
 
+import au.com.smarttrace.beacons.tracker.Recording;
+import au.com.smarttrace.beacons.tracker.Tracking;
+
 /**
  * Manage scanned devices in an ordered list and notify listeners for changes
  * happening in any of these devices.
@@ -269,6 +272,7 @@ public class DeviceManager {
 	
 	/**
 	 * Called when bluetooth is turned on
+	 * //TODO find a better solution
 	 */
 	public synchronized void onBluetoothOn() {
 		timerHandler.post(timedCheck);
@@ -276,6 +280,7 @@ public class DeviceManager {
 	
 	/**
 	 * Called when bluetooth is turned off
+	 * //TODO find a better solution
 	 */
 	public synchronized void onBluetoothOff() {
 		timerHandler.removeCallbacks(timedCheck);
@@ -296,13 +301,36 @@ public class DeviceManager {
 	 * @see Device
 	 */
 	public void addDevice(Context context, ScanResult result) {
-		
+
 		if (result.getDevice().getType()!=BluetoothDevice.DEVICE_TYPE_LE)
 			return;
 		
 		mainHandler.post(
 			new Adder(
 				new Device(context, result)));
+	}
+
+	public synchronized void addInternalDevice(Context context, Class<? extends InternalDevice> deviceClass) {
+		try {
+			InternalDevice device = deviceClass.newInstance();
+			device.init(context, null);
+			int pos = Collections.binarySearch(list, device);
+			if (pos<0) {
+				list.add(-pos - 1, device);
+				fireDeviceEvent(device, DeviceEvent.TYPE_DEVICE_ADDED);
+			}
+		} catch(Exception e) {
+			Log.e(TAG, "Cannot add device "+deviceClass.getSimpleName(), e);
+		}
+	}
+
+	public synchronized void removeInternalDevice(String identifier) {
+		InternalDevice temp = new InternalDevice(identifier);
+		int pos = Collections.binarySearch(list, temp);
+		if (pos>=0) {
+			Device removed = list.remove(pos);
+			fireDeviceEvent(removed, DeviceEvent.TYPE_DEVICE_REMOVED);
+		}
 	}
 	
 	/**
@@ -344,6 +372,32 @@ public class DeviceManager {
 			if (device.getId().equals(identifier))
 				return device;
 		throw new NoSuchDeviceException("ID="+identifier);
+	}
+
+	private Recording recording;
+
+	public boolean isRecording() {
+		return recording!=null;
+	}
+
+	/**
+	 * Start tracking all the devices listed
+	 *
+	 * TODO: configure user based and config based devices
+	 */
+	public synchronized void startTracking() {
+		recording = new Recording();
+		addDeviceListener(recording);
+		for (Device d : list)
+			recording.addDevice(d);
+	}
+
+	public synchronized void stopTracking() {
+		if (recording!=null) {
+			recording.stop();
+			removeDeviceListener(recording);
+			recording = null;
+		}
 	}
 
 }

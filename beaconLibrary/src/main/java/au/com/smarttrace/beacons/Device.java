@@ -42,6 +42,8 @@ import android.view.ViewStub;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import au.com.smarttrace.beacons.tracker.Tracking;
+
 /**
  * <p>
  * The base class for a device managed by the application 
@@ -192,7 +194,11 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 		}
 	}
 
-	/**
+    public Context getContext() {
+        return context;
+    }
+
+    /**
 	 * Unique identifier for a device (XXX: experimental implementation)
 	 * 
 	 * @return
@@ -541,18 +547,24 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 
 	}
 
+    private Tracking tracking;
+
+    public boolean isTracking() {
+        return tracking!=null;
+    }
+
 	/**
 	 * Called when the tracking is started
 	 */
-	public void onTrackingStart() {
-
+	public void onTrackingStart(Tracking tracking) {
+        this.tracking = tracking;
 	}
 
 	/**
 	 * Called when the tracking is stopped
 	 */
 	public void onTrackingStop() {
-
+        tracking = null;
 	}
 
 // |
