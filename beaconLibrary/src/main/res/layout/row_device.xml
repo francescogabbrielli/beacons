@@ -24,11 +24,11 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
             
-    <!--TextView
-        android:id="@+id/device_name"
+    <TextView
+        android:id="@+id/device_title"
         style="@android:style/TextAppearance.Large"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/-->
+        android:layout_height="wrap_content"/>
     
 	<LinearLayout
 	    android:layout_width="wrap_content"
@@ -57,13 +57,13 @@
 	    </LinearLayout>
 	    
 	    <LinearLayout 
-	        android:layout_width="fill_parent"
+	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
 	        android:orientation="vertical"
 	        android:layout_weight="1">
 	        
             <ViewStub android:id="@+id/device_row_content_stub"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
 	        	        
 		    <TextView 

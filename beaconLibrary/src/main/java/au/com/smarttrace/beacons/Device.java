@@ -254,6 +254,12 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 		return (SystemClock.elapsedRealtimeNanos() - lastTime) / 1000000l;
 	}
 
+	public long getLastSeen() {
+//		long bootTime = System.currentTimeMillis()-SystemClock.elapsedRealtime();
+//		return lastTime/1000000l - bootTime;TODO: time independent of System
+		return System.currentTimeMillis() - getElapsedTime();
+	}
+
 	/**
 	 * Utility method to build UUID from a resource
 	 * 
@@ -554,16 +560,50 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
     }
 
 	/**
+	 * Add a sample to the current tracking (if the device is being tracked)
+	 * at the current time (now)
+	 *
+	 * @param sampleKey
+	 * 				the data key
+	 * @param sampleValue
+	 * 				the data
+	 * @param <T>
+	 *     		type of data (unused at this leve)
+     */
+	protected synchronized <T> void addSample(String sampleKey, T sampleValue) {
+		if (tracking!=null)
+			tracking.addSample(sampleKey, sampleValue);
+	}
+
+	/**
+	 * Add a sample to the current tracking (if the device is being tracked)
+	 * at the specified time
+	 *
+	 * @param time
+	 * 				the time
+	 * @param sampleKey
+	 * 				the data key
+	 * @param sampleValue
+	 * 				the data
+	 * @param <T>
+	 *     		type of data (unused at this leve)
+	 */
+	protected synchronized <T> void addSample(long time, String sampleKey, T sampleValue) {
+		if (tracking!=null)
+			tracking.addSample(time, sampleKey, sampleValue);
+	}
+
+	/**
 	 * Called when the tracking is started
 	 */
-	public void onTrackingStart(Tracking tracking) {
+	public synchronized void onTrackingStart(Tracking tracking) {
         this.tracking = tracking;
 	}
 
 	/**
 	 * Called when the tracking is stopped
 	 */
-	public void onTrackingStop() {
+	public synchronized void onTrackingStop() {
         tracking = null;
 	}
 

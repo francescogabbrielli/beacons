@@ -122,19 +122,22 @@ public class BluetoothService extends Service {
 //			Toast.makeText(getApplicationContext(), R.string.bluetooth_service_start, Toast.LENGTH_LONG).show();
 //		else
 //			Toast.makeText(getApplicationContext(), "RESTARTING BLUETOOTH", Toast.LENGTH_SHORT).show();
-		Log.i(TAG, "BLE START SCANNING... " + intent);
+		Log.i(TAG, "BLE START... " + intent);
 		btScanner = btAdapter.getBluetoothLeScanner();
-		btScanner.startScan(btFilters, btSettings, scanCallback);
+		if (btScanner!=null && btAdapter.isEnabled()) {
+			Log.i(TAG, "...START SCANNING!" + intent);
+			btScanner.startScan(btFilters, btSettings, scanCallback);
+		}
 		return START_STICKY;
 	}
 
 	@Override
 	public void onDestroy() {
-		if (btScanner!=null) {
-			if (btAdapter.isEnabled())
-				btScanner.stopScan(scanCallback);
+		Log.i(TAG, "BLE STOP...");
+		if (btScanner!=null && btAdapter.isEnabled()) {
+			Log.i(TAG, "...STOP SCANNING!");
+			btScanner.stopScan(scanCallback);
 //			Toast.makeText(getApplicationContext(), R.string.bluetooth_service_stop, Toast.LENGTH_LONG).show();
-			Log.i(TAG, "...BLE STOP SCANNING");
 		}
 		super.onDestroy();
 	}

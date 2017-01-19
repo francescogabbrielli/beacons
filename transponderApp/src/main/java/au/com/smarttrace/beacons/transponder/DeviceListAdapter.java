@@ -69,10 +69,8 @@ public class DeviceListAdapter extends BaseAdapter implements DeviceListener {
 				context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		View view = inflater.inflate(R.layout.row_device, parent, false);//XXX: needed for multiple ViewStubs 
 		
-//		TextView tv = (TextView) view.findViewById(R.id.device_name);
-//		tv.setText(device.toString());
-
-		TextView tv;
+		TextView tv = (TextView) view.findViewById(R.id.device_title);
+		tv.setText(device.toString());
 
 		if (device.getBattery()>=0) {
 			tv = (TextView) view.findViewById(R.id.device_battery);
@@ -92,7 +90,7 @@ public class DeviceListAdapter extends BaseAdapter implements DeviceListener {
 		tv.append(": ");
 		tv.append(
 			SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM).format(
-				new Date(System.currentTimeMillis()-device.getElapsedTime())));
+				new Date(device.getLastSeen())));
 		
 		return view;
 	}

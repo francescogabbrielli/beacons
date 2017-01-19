@@ -1,24 +1,35 @@
 package au.com.smarttrace.beacons.transponder.gps;
 
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.location.Location;
+import android.os.Handler;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewStub;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.location.LocationListener;
 
 import au.com.smarttrace.beacons.Device;
 import au.com.smarttrace.beacons.DeviceEvent;
+import au.com.smarttrace.beacons.DeviceManager;
 import au.com.smarttrace.beacons.InternalDevice;
+import au.com.smarttrace.beacons.NoSuchDeviceException;
+import au.com.smarttrace.beacons.tracker.LocationCompacter;
 import au.com.smarttrace.beacons.tracker.Tracking;
 import au.com.smarttrace.beacons.transponder.R;
 
 /**
  *
  */
-public class GPSDevice extends InternalDevice {
+public class GPSDevice extends InternalDevice implements LocationListener {
 
-    public static final String IDENTIFIER = "_internal_GPS";
+    public static final String IDENTIFIER = "01_internal_GPS";
+    public static final String KEY_LOCATION = "location";
 
     private int signal;
 
@@ -30,7 +41,7 @@ public class GPSDevice extends InternalDevice {
     @Override
     public Device init(Context context, ScanResult deviceResult) {
         super.init(context, deviceResult);
-        name = "GPS";
+        name = context.getResources().getString(R.string.title_gps);
         signal = -100;
         return this;
     }
@@ -57,20 +68,26 @@ public class GPSDevice extends InternalDevice {
     public void setLocation(Location location) {
         if (location!=null) {
             this.location = location;
-            this.lastTime = SystemClock.elapsedRealtime();
             signal = - 100 + (int) (100/Math.min(location.getAccuracy(), 1d));
-            fireEvent(DeviceEvent.TYPE_DEVICE_UPDATED);
+            new Handler().post(new Runnable() {@Override public void run() {Toast.makeText(context, "Location: " + String.valueOf(signal), Toast.LENGTH_SHORT).show();}});
+            fireUpdate();
+            addSample(KEY_LOCATION, location);
         }
     }
 
     @Override
     public synchronized void connect() {
-
+        //XXX: override bluetooth behaviour -> TODO: abstract Device hierarchy
     }
 
     @Override
     public synchronized void disconnect() {
+        //XXX: override bluetooth behaviour -> TODO: abstract Device hierarchy
+    }
 
+    @Override
+    public int getConnectionState() {
+        return signal<0 ? BluetoothProfile.STATE_CONNECTED : BluetoothProfile.STATE_DISCONNECTED;//XXX: fake -> TODO: abstract Device hierarchy
     }
 
     @Override
@@ -79,27 +96,25 @@ public class GPSDevice extends InternalDevice {
     }
 
     @Override
-    public View getRowContent(ViewStub stub, View content) {
-        return super.getRowContent(stub, content);
+    protected void populateRowContent(View content) {
+        TextView tv = (TextView) content.findViewById(R.id.gps_latitude);
+        tv.setText(R.string.latitude);
+        tv.append(": ");
+        tv.append(String.format("%3.4f", location!=null ? location.getLatitude() : " - "));
+        tv = (TextView) content.findViewById(R.id.gps_longitude);
+        tv.setText(R.string.longitude);
+        tv.append(": ");
+        tv.append(String.format("%3.4f", location!=null ? location.getLongitude() : " - "));
     }
 
     @Override
-    public void onScan() {
-        super.onScan();
-    }
-
-    @Override
-    public void onScanStop() {
-        super.onScanStop();
-    }
-
-    @Override
-    public void onTrackingStart(Tracking tracking) {
-        super.onTrackingStart(tracking);
-    }
-
-    @Override
-    public void onTrackingStop() {
-        super.onTrackingStop();
+    public void onLocationChanged(final Location location) {
+        new Handler().post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(context, String.valueOf(location), Toast.LENGTH_SHORT).show();
+            }
+        });
+        setLocation(location);
     }
 }

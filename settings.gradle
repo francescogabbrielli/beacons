@@ -1,0 +1,4 @@
+include ':axaetDevices'
+include ':beaconLibrary'
+include ':tzoneDevices'
+include ':transponderApp'

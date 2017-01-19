@@ -30,6 +30,7 @@ import android.location.LocationManager;
 import au.com.smarttrace.beacons.BluetoothService;
 import au.com.smarttrace.beacons.DeviceManager;
 import au.com.smarttrace.beacons.transponder.gps.GPSDevice;
+import au.com.smarttrace.beacons.transponder.gps.LocationService;
 
 public class BeaconTransponder extends Application {
 	
@@ -44,7 +45,7 @@ public class BeaconTransponder extends Application {
 		
 		super.onCreate();
 		
-		stopService(new Intent(this, BluetoothService.class));
+//		stopService(new Intent(this, BluetoothService.class));
 		
 		// check if bluetooth is on and start the bluetooth service
 		BluetoothManager bm = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
@@ -52,19 +53,15 @@ public class BeaconTransponder extends Application {
 		if (ba!=null && ba.isEnabled()) {
 			DeviceManager.getInstance().onBluetoothOn();
 			startService(new Intent(this, BluetoothService.class));
-
 		}
 
 		// check if GPS is on and start the location service
-		LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+		LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
 				|| locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-
-			startService(new Intent(this, BluetoothService.class));
+			startService(new Intent(this, LocationService.class));
 			DeviceManager.getInstance().addInternalDevice(this, GPSDevice.class);
-
 		}
-
 		
 	}
 	

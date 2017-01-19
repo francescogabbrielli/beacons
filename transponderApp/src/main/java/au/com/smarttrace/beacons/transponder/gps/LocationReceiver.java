@@ -21,11 +21,9 @@ public class LocationReceiver extends BroadcastReceiver {
                     || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 
                 context.startService(serviceIntent);
-                DeviceManager.getInstance().addInternalDevice(context.getApplicationContext(), GPSDevice.class);
 
             } else {
 
-                DeviceManager.getInstance().removeInternalDevice(GPSDevice.IDENTIFIER);
                 context.stopService(serviceIntent);
 
             }

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="rt_t_device_name">TZone Humiture Recorder</string>
+    <string name="rt_t">au.com.smarttrace.tzone.humiture.TZoneHumitureDevice</string>
+    <string name="rt_t_serial">Serial Number</string>
+    <string name="rt_t_temperature">Temperature</string>
+    <string name="rt_t_humidity">Humidity</string>
+    <string name="rt_t_records">Data logger records</string>
+    <string name="rt_t_sync">Sync from Data Logger</string>
+    
+    <string name="rt_t_error_service_not_found">GATT Service not found!</string>
+    
+    <string name="title_activity_tzone">TZoneActivity</string>
+    <string name="action_settings">Settings</string>
+        
+    <string name="tzone_humiture_SERVICE_MAIN"><![CDATA[27763B10-999C-4D6A-9FC4-C7272BE10900]]></string>
+    
+    <string name="tzone_humiture_CHARACTERISTIC_SN"><![CDATA[27763B11-999C-4D6A-9FC4-C7272BE10900]]></string>
+    <string name="tzone_humiture_CHARACTERISTIC_INTERVAL"><![CDATA[27763B12-999C-4D6A-9FC4-C7272BE10900]]></string>
+    <string name="tzone_humiture_CHARACTERISTIC_TOKEN"><![CDATA[27763B13-999C-4D6A-9FC4-C7272BE10900]]></string>
+    <string name="tzone_humiture_CHARACTERISTIC_TRANSMIT_POWER"><![CDATA[27763B14-999C-4D6A-9FC4-C7272BE10900]]></string>
+    <string name="tzone_humiture_CHARACTERISTIC_LOG_RECORDS"><![CDATA[]]>27763B18-999C-4D6A-9FC4-C7272BE10900</string>
+    <string name="tzone_humiture_CHARACTERISTIC_SYSN"><![CDATA[27763B21-999C-4D6A-9FC4-C7272BE10900]]></string>
+    
+        
+</resources>

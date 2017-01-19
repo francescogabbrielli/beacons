@@ -3,9 +3,9 @@ package au.com.smarttrace.beacons.transponder.gps;
 import android.Manifest;
 import android.app.Service;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
@@ -30,16 +30,16 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import au.com.smarttrace.beacons.DeviceManager;
 import au.com.smarttrace.beacons.NoSuchDeviceException;
-import au.com.smarttrace.beacons.transponder.LocationActivity;
 
 public class LocationService extends Service implements
                                     GoogleApiClient.ConnectionCallbacks,
                                     GoogleApiClient.OnConnectionFailedListener,
-                                    ResultCallback<LocationSettingsResult>,
-                                    LocationListener {
+                                    ResultCallback<LocationSettingsResult> {
 
     private final static int REQUEST_PERMISSION_LOCATION = 1;
     private final static int REQUEST_CHECK_SETTINGS = 2;
+
+    private final static String TAG = LocationService.class.getSimpleName();
 
     /** Broadcast action to request for permissions */
     private final static String ACTION_REQUEST_PERMISSION = "action_request_permission";
@@ -73,43 +73,101 @@ public class LocationService extends Service implements
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        googleApiClient.connect();
+        DeviceManager.getInstance().addInternalDevice(getApplicationContext(), GPSDevice.class);
+        if (!googleApiClient.isConnected() && !googleApiClient.isConnecting())
+            googleApiClient.connect();
         return START_STICKY;
     }
 
+    private GPSDevice getGPS() {
+        try {
+            return (GPSDevice) DeviceManager.getInstance().getDevice(GPSDevice.IDENTIFIER);
+        } catch(NoSuchDeviceException e) {
+            Log.e(TAG, "GPS not found?", e);
+        }
+        return null;
+    }
+
+    public class LocalBinder extends Binder {
+        public LocationService getService() {
+            return LocationService.this;
+        }
+    }
+
+    private LocalBinder binder = new LocalBinder();
+
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return binder;
     }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
 
-//        if (ActivityCompat.checkSelfPermission(this,
-//                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-//                && ActivityCompat.checkSelfPermission(this,
-//                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//
-//            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(requestPermissionIntent);
-//            return;
-//        }
-//
-//        Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(
-//                googleApiClient);
-//
-//        if (lastLocation != null)
-//            updateUI(lastLocation);
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-        requestLocation();
+            LocalBroadcastManager.getInstance(getApplicationContext())
+                    .sendBroadcast(new Intent(ACTION_REQUEST_PERMISSION));
+            return;
+        }
+
+        Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                googleApiClient);
+
+        if (lastLocation != null)
+            getGPS().setLocation(lastLocation);
+
+        //create request
+        request = new LocationRequest();
+        request.setInterval(25000);
+        request.setFastestInterval(5000);
+        request.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
     }
 
-    private void requestLocation() {
+    @Override
+    public void onConnectionSuspended(int cause) {
+        switch(cause) {
+            case GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST:
+                //XXX: reconnect? or wait for network to activated?
+                break;
+            case GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED:
+                googleApiClient.connect();
+                break;
+        }
+    }
 
-        request = new LocationRequest();
-        request.setInterval(20000);
-        request.setFastestInterval(5000);
-        request.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult result) {
+        Log.w(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
+    }
+
+    @Override
+    public void onResult(@NonNull LocationSettingsResult result) {
+        final Status status = result.getStatus();
+        final LocationSettingsStates states = result.getLocationSettingsStates();
+        switch (status.getStatusCode()) {
+            case LocationSettingsStatusCodes.SUCCESS:
+                // All location settings are satisfied. The client can
+                // initialize location requests here.
+                requestLocation();
+                break;
+            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                LocalBroadcastManager.getInstance(getApplicationContext())
+                                .sendBroadcast(getIntent(ACTION_REQUEST_RESOLUTION));
+                break;
+            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                Toast.makeText(this, "Please change your settings to enable location management in this app", Toast.LENGTH_LONG).show();
+                stopSelf();
+                break;
+        }
+
+    }
+
+    public void startUpdates() {
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
                 .addLocationRequest(request);
@@ -122,7 +180,12 @@ public class LocationService extends Service implements
 
     }
 
-    private void requestLocationImpl() {
+    public void stopUpdates() {
+        LocationServices.FusedLocationApi
+                .removeLocationUpdates(googleApiClient, getGPS());
+    }
+
+    private void requestLocation() {
 
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -137,56 +200,13 @@ public class LocationService extends Service implements
         }
 
         LocationServices.FusedLocationApi.requestLocationUpdates(
-                googleApiClient, request, this);
+                googleApiClient, request, getGPS());
 
-    }
-
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
-
-    @Override
-    public void onResult(@NonNull LocationSettingsResult result) {
-        final Status status = result.getStatus();
-        final LocationSettingsStates states = result.getLocationSettingsStates();
-        switch (status.getStatusCode()) {
-            case LocationSettingsStatusCodes.SUCCESS:
-                // All location settings are satisfied. The client can
-                // initialize location requests here.
-                requestLocationImpl();
-                break;
-            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                LocalBroadcastManager.getInstance(getApplicationContext())
-                                .sendBroadcast(getIntent(ACTION_REQUEST_RESOLUTION));
-                break;
-            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-                Toast.makeText(this, "Please change your settings to enable location management in this app", Toast.LENGTH_LONG).show();
-                stopSelf();
-                break;
-        }
-
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        Toast.makeText(this, "NEW LOCATION=" + location, Toast.LENGTH_LONG).show();
-        try {
-            GPSDevice gps = (GPSDevice) DeviceManager.getInstance().getDevice(GPSDevice.IDENTIFIER);
-            gps.setLocation(location);
-        }catch(NoSuchDeviceException e) {
-            Log.e("LocationService", "GPS not found?", e);
-        }
     }
 
     @Override
     public void onDestroy() {
+        DeviceManager.getInstance().removeInternalDevice(GPSDevice.IDENTIFIER);
         googleApiClient.disconnect();
     }
 

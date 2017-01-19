@@ -1,0 +1,116 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+    android:layout_marginRight="@dimen/activity_horizontal_margin"
+    android:layout_marginTop="@dimen/activity_vertical_margin"
+    android:layout_marginBottom="@dimen/activity_vertical_margin"
+    tools:context="au.com.smarttrace.tzone.humiture.TZoneActivity" 
+    android:orientation="vertical">
+    
+    <ProgressBar 
+        android:id="@+id/tzone_humiture_all_progress"
+        android:max="100"
+        style="@android:style/Widget.DeviceDefault.ProgressBar.Horizontal" 
+        android:indeterminate="false"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"/>
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="2">
+    
+        <TextView 
+            android:layout_column="0"
+            android:layout_row="0"
+            android:layout_columnWeight="9"
+            android:text="@string/rt_t_serial"
+            />
+        
+        <TextView 
+            android:layout_column="1"
+            android:layout_row="0"
+            android:layout_columnWeight="1"
+            android:layout_gravity="end"
+            android:id="@+id/tzone_humiture_all_serial"
+            style="@android:style/TextAppearance.Large"
+            />
+        
+        <TextView 
+            android:layout_column="0"
+            android:layout_columnWeight="9"
+            android:text="@string/rt_t_temperature"
+            />
+        
+        <TextView 
+            android:layout_column="1"
+            android:layout_columnWeight="1"
+            android:layout_gravity="end"
+            android:id="@+id/tzone_humiture_all_temperature"
+            style="@android:style/TextAppearance.Large"
+            />
+        
+        <TextView 
+            android:layout_column="0"
+            android:text="@string/rt_t_humidity"
+            />
+        
+        <TextView 
+            android:layout_column="1"
+            android:layout_gravity="end"
+            android:id="@+id/tzone_humiture_all_humidity"
+            style="@android:style/TextAppearance.Large"
+            />
+        
+        <TextView 
+            android:layout_column="0"
+            android:text="@string/rt_t_records"
+            />
+        
+        <TextView 
+            android:layout_column="1"
+            android:layout_gravity="end"
+            android:id="@+id/tzone_humiture_all_records"
+            style="@android:style/TextAppearance.Large"
+            />
+            
+        <TextView 
+            android:layout_column="0"
+            android:text="@string/device_last_seen"
+            />
+        
+        <TextView 
+            android:layout_column="1"
+            android:layout_gravity="end"
+            android:id="@+id/tzone_humiture_all_lastseen"
+            style="@android:style/TextAppearance.Large"
+            />
+        </GridLayout>
+         
+    <LinearLayout 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        
+        <TextView 
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="9"
+            android:text="@string/rt_t_sync"
+            />
+       
+        <ToggleButton
+            android:id="@+id/tzone_sync_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_gravity="end"
+            android:enabled="false"
+            />
+        
+    </LinearLayout>
+
+</LinearLayout>

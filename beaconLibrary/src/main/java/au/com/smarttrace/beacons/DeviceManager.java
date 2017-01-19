@@ -118,6 +118,8 @@ public class DeviceManager {
 		@Override
 		protected void syncRun() {
 			for (Device d : list) {
+				if (d instanceof InternalDevice)
+					continue;
 				long diff = d.getElapsedTime();
 				if (diff > TIME_LIMIT) {
 					Log.i(TAG, "Device inactive for "+(diff/1000l)+"s (" + d.getTitle()+")");
