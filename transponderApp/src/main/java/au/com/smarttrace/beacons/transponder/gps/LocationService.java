@@ -8,6 +8,7 @@ import android.location.Location;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -20,7 +21,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
@@ -36,16 +36,20 @@ public class LocationService extends Service implements
                                     GoogleApiClient.OnConnectionFailedListener,
                                     ResultCallback<LocationSettingsResult> {
 
-    private final static int REQUEST_PERMISSION_LOCATION = 1;
-    private final static int REQUEST_CHECK_SETTINGS = 2;
-
     private final static String TAG = LocationService.class.getSimpleName();
 
     /** Broadcast action to request for permissions */
-    private final static String ACTION_REQUEST_PERMISSION = "action_request_permission";
+    public final static String ACTION_REQUEST_PERMISSION = "action_request_permission";
 
     /** Broadcast action to request for permissions */
-    private final static String ACTION_REQUEST_RESOLUTION = "action_request_resolution";
+    public final static String ACTION_REQUEST_RESOLUTION = "action_request_resolution";
+
+    /** Notify when location updates can be performed */
+    public final static String ACTION_LOCATION_STATUS_CHANGE = "action_location_status_changed";
+
+    public final static String KEY_LOCATION_STATUS = "key_location_status";
+
+    public final static String KEY_PARAM = "key_param";
 
     /** GoogleAPI client */
     private GoogleApiClient googleApiClient;
@@ -54,10 +58,6 @@ public class LocationService extends Service implements
     private LocationRequest request;
 
     public LocationService() {
-    }
-
-    private Intent getIntent(String action) {
-        return new Intent(getPackageName() + "." + action);
     }
 
     @Override
@@ -102,7 +102,7 @@ public class LocationService extends Service implements
     }
 
     @Override
-    public void onConnected(@Nullable Bundle bundle) {
+    public synchronized void onConnected(@Nullable Bundle bundle) {
 
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -126,10 +126,12 @@ public class LocationService extends Service implements
         request.setFastestInterval(5000);
         request.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
+        sendChange(true);
+
     }
 
     @Override
-    public void onConnectionSuspended(int cause) {
+    public synchronized void onConnectionSuspended(int cause) {
         switch(cause) {
             case GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST:
                 //XXX: reconnect? or wait for network to activated?
@@ -138,6 +140,9 @@ public class LocationService extends Service implements
                 googleApiClient.connect();
                 break;
         }
+
+        request = null;
+        sendChange(false);
     }
 
     @Override
@@ -145,26 +150,23 @@ public class LocationService extends Service implements
         Log.w(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
     }
 
-    @Override
-    public void onResult(@NonNull LocationSettingsResult result) {
-        final Status status = result.getStatus();
-        final LocationSettingsStates states = result.getLocationSettingsStates();
-        switch (status.getStatusCode()) {
-            case LocationSettingsStatusCodes.SUCCESS:
-                // All location settings are satisfied. The client can
-                // initialize location requests here.
-                requestLocation();
-                break;
-            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                LocalBroadcastManager.getInstance(getApplicationContext())
-                                .sendBroadcast(getIntent(ACTION_REQUEST_RESOLUTION));
-                break;
-            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-                Toast.makeText(this, "Please change your settings to enable location management in this app", Toast.LENGTH_LONG).show();
-                stopSelf();
-                break;
-        }
+    private void sendChange(boolean status) {
+        Intent intent = new Intent(ACTION_LOCATION_STATUS_CHANGE);
+        intent.putExtra(KEY_LOCATION_STATUS, status);
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+    }
 
+    private void sendAction(String action, Parcelable... params) {
+        Intent intent = new Intent(action);
+        int n = 0;
+        if (params.length>0)
+            for (Parcelable param : params)
+                intent.putExtra(KEY_PARAM+"_"+(++n), param);
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+    }
+
+    public synchronized boolean isConnected() {
+        return request!=null;
     }
 
     public void startUpdates() {
@@ -185,6 +187,25 @@ public class LocationService extends Service implements
                 .removeLocationUpdates(googleApiClient, getGPS());
     }
 
+    @Override
+    public void onResult(@NonNull LocationSettingsResult result) {
+        final Status status = result.getStatus();
+        final LocationSettingsStates states = result.getLocationSettingsStates();
+        switch (status.getStatusCode()) {
+            case LocationSettingsStatusCodes.SUCCESS:
+                requestLocation();
+                break;
+            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                sendAction(ACTION_REQUEST_RESOLUTION, status);
+                break;
+            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                Toast.makeText(this, "Please change your settings to enable location management in this app", Toast.LENGTH_LONG).show();
+                stopSelf();
+                break;
+        }
+
+    }
+
     private void requestLocation() {
 
         if (ActivityCompat.checkSelfPermission(this,
@@ -192,9 +213,7 @@ public class LocationService extends Service implements
                 && ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-            LocalBroadcastManager.getInstance(getApplicationContext())
-                    .sendBroadcast(getIntent(ACTION_REQUEST_PERMISSION));
-
+            sendAction(ACTION_REQUEST_PERMISSION);
             return;
 
         }
@@ -206,6 +225,8 @@ public class LocationService extends Service implements
 
     @Override
     public void onDestroy() {
+        request = null;
+        sendChange(false);
         DeviceManager.getInstance().removeInternalDevice(GPSDevice.IDENTIFIER);
         googleApiClient.disconnect();
     }

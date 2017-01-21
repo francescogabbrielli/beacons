@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_mai"
@@ -9,6 +9,28 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:orientation="vertical"
+    tools:gravity="center"
     tools:context="au.com.smarttrace.beacons.transponder.MainActivity">
 
-</RelativeLayout>
+    <TextView
+        android:id="@+id/recording_log"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:scrollbarAlwaysDrawVerticalTrack="true"/>
+
+    <ToggleButton
+        android:layout_margin="4dp"
+        android:id="@+id/recording_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center_horizontal"
+        android:checked="false"
+        android:enabled="false"
+        android:background="@drawable/ic_recording"
+        android:textAlignment="center"
+        android:textOff=""
+        android:textOn=""/>
+
+</LinearLayout>

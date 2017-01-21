@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.location.LocationManager;
 
 import au.com.smarttrace.beacons.DeviceManager;
+import au.com.smarttrace.beacons.transponder.BeaconTransponder;
 
 public class LocationReceiver extends BroadcastReceiver {
 
@@ -13,21 +14,13 @@ public class LocationReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
 
         if(LocationManager.PROVIDERS_CHANGED_ACTION.equals(intent.getAction())) {
-
             Intent serviceIntent = new Intent(context, LocationService.class);
-
-            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-                    || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-
+            BeaconTransponder app = (BeaconTransponder) context.getApplicationContext();
+            if (app.isLocationEnabled()) {
                 context.startService(serviceIntent);
-
             } else {
-
                 context.stopService(serviceIntent);
-
             }
-
         }
 
     }

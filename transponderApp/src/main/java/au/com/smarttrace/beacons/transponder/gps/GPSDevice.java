@@ -70,7 +70,7 @@ public class GPSDevice extends InternalDevice implements LocationListener {
             this.location = location;
             signal = - 100 + (int) (100/Math.min(location.getAccuracy(), 1d));
             new Handler().post(new Runnable() {@Override public void run() {Toast.makeText(context, "Location: " + String.valueOf(signal), Toast.LENGTH_SHORT).show();}});
-            fireUpdate();
+            fireUpdate(String.valueOf(location));
             addSample(KEY_LOCATION, location);
         }
     }
@@ -109,12 +109,6 @@ public class GPSDevice extends InternalDevice implements LocationListener {
 
     @Override
     public void onLocationChanged(final Location location) {
-        new Handler().post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(context, String.valueOf(location), Toast.LENGTH_SHORT).show();
-            }
-        });
         setLocation(location);
     }
 }

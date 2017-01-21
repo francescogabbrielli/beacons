@@ -417,7 +417,13 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 		DeviceManager.getInstance()
 				.fireDeviceEvent(this, DeviceEvent.TYPE_DEVICE_UPDATED);		
 	}
-	
+
+	protected void fireUpdate(String message) {
+		lastTime = SystemClock.elapsedRealtimeNanos();
+		DeviceManager.getInstance()
+				.fireDeviceEvent(this, DeviceEvent.TYPE_DEVICE_UPDATED, message);
+	}
+
 	protected void fireError(int message) {
 		fireError(context.getResources().getString(message));
 	}
@@ -447,8 +453,8 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	
 
 	class ReadLock {UUID uuid;}
-	private final static long TIMEOUT_READ_ALL = 10000l;
-	private ReadLock readLock = new ReadLock();
+	private final static long TIMEOUT_READ_ALL = 10000;
+	private final ReadLock readLock = new ReadLock();
 	private AsyncTask<Void, Integer, Exception> activeTask;
 	public AsyncTask<Void, Integer, Exception> getActiveTask() {
 		return activeTask;

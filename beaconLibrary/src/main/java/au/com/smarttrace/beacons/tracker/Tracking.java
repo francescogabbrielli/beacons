@@ -4,6 +4,7 @@ import android.content.Context;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +48,7 @@ public class Tracking {
 
     public Tracking(Context context) {
         this.context = context;
+        components = new LinkedHashMap<>();
     }
 
     private <T> TrackingComponent<T> getComponent(String sampleKey, Class<T> sampleClass) {

@@ -35,7 +35,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -57,6 +59,9 @@ public class BluetoothService extends Service {
 	private BluetoothLeScanner btScanner;
 	private ScanSettings btSettings;
 	private List<ScanFilter> btFilters;
+
+	public final static String ACTION_BLUETOOTH_STATUS_CHANGE = "action_bluetooth_status_change";
+	public final static String KEY_BLUETOOTH_STATUS = "key_bluetooth_status";
 
 	/**
 	 * Bluetooth callback to receive the scan results
@@ -117,7 +122,7 @@ public class BluetoothService extends Service {
 	}
 
 	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
+	public synchronized int onStartCommand(Intent intent, int flags, int startId) {
 //		if (intent!=null)
 //			Toast.makeText(getApplicationContext(), R.string.bluetooth_service_start, Toast.LENGTH_LONG).show();
 //		else
@@ -127,19 +132,32 @@ public class BluetoothService extends Service {
 		if (btScanner!=null && btAdapter.isEnabled()) {
 			Log.i(TAG, "...START SCANNING!" + intent);
 			btScanner.startScan(btFilters, btSettings, scanCallback);
+			sendChange(true);
 		}
 		return START_STICKY;
 	}
 
 	@Override
-	public void onDestroy() {
+	public synchronized void onDestroy() {
 		Log.i(TAG, "BLE STOP...");
 		if (btScanner!=null && btAdapter.isEnabled()) {
 			Log.i(TAG, "...STOP SCANNING!");
 			btScanner.stopScan(scanCallback);
 //			Toast.makeText(getApplicationContext(), R.string.bluetooth_service_stop, Toast.LENGTH_LONG).show();
 		}
+		btScanner = null;
+		sendChange(false);
 		super.onDestroy();
+	}
+
+	private void sendChange(final boolean status) {
+		Intent intent = new Intent(ACTION_BLUETOOTH_STATUS_CHANGE);
+		intent.putExtra(KEY_BLUETOOTH_STATUS, status);
+		LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+	}
+
+	public synchronized boolean isConnected() {
+		return btScanner!=null;
 	}
 
 	public void connect(Device device) {

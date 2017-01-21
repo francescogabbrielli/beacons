@@ -39,6 +39,19 @@ public class BeaconTransponder extends Application {
 	public BeaconTransponder() {
 		
 	}
+
+	public boolean isLocationEnabled() {
+		LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+		return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+				|| locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+	}
+
+	public boolean isBluetoothEnabled() {
+		BluetoothManager bm = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
+		BluetoothAdapter ba = bm.getAdapter();
+		return ba!=null && ba.isEnabled();
+	}
+
 	
 	@Override
 	public void onCreate() {
@@ -48,17 +61,13 @@ public class BeaconTransponder extends Application {
 //		stopService(new Intent(this, BluetoothService.class));
 		
 		// check if bluetooth is on and start the bluetooth service
-		BluetoothManager bm = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-		BluetoothAdapter ba = bm.getAdapter();
-		if (ba!=null && ba.isEnabled()) {
+		if (isBluetoothEnabled()) {
 			DeviceManager.getInstance().onBluetoothOn();
 			startService(new Intent(this, BluetoothService.class));
 		}
 
 		// check if GPS is on and start the location service
-		LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-		if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-				|| locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+		if (isLocationEnabled()) {
 			startService(new Intent(this, LocationService.class));
 			DeviceManager.getInstance().addInternalDevice(this, GPSDevice.class);
 		}
