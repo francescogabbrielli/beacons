@@ -206,19 +206,26 @@ public class TZoneHumitureDevice extends Device {
 		
 		//attempt reconnection 1s after an unexpected connection error
 		if (newState!=BluetoothGatt.STATE_CONNECTED && status!=BluetoothGatt.GATT_SUCCESS)
-			
-			Executors.newSingleThreadScheduledExecutor().schedule(
+
+			runOnUIThread(
+			//Executors.newSingleThreadScheduledExecutor().schedule(
 				new Runnable() {
 					@Override public void run() {connect();}
 				}, 
-				1l, TimeUnit.SECONDS);
-							
+			//	1l, TimeUnit.SECONDS);
+			1000l);
+
 	}
 	
 	@Override
 	public synchronized void onServicesDiscovered(BluetoothGatt gatt, int status) {
 		super.onServicesDiscovered(gatt, status);
-		checkToken("000000".toCharArray());
+		runOnUIThread(new Runnable() {
+			@Override
+			public void run() {
+				checkToken("000000".toCharArray());
+			}
+		});
 		fireUpdate();//fire an update after connection (mainly for the connection status...)
 	}
 	

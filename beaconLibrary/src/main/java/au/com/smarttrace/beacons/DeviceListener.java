@@ -33,6 +33,6 @@ public interface DeviceListener extends EventListener {
 	 * @param event
 	 * 			the event that specifies the kind and entity of change
 	 */
-	public void onChange(DeviceEvent event); 
+	public void onDeviceChange(DeviceEvent event);
 
 }

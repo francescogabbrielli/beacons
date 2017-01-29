@@ -22,6 +22,11 @@ package au.com.smarttrace.beacons;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
@@ -33,6 +38,8 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
@@ -43,17 +50,16 @@ import android.widget.Toast;
 
 /**
  * <p>
- * Bluetooth devices discovery service
+ * Bluetooth LE devices discovery service
  * 
  * <p>
  * 
- * 
  * @author Francesco Gabbrielli <francescogabbrielli at gmail>
  */
-public class BluetoothService extends Service {
-	
-	private static final String TAG = BluetoothService.class.getCanonicalName();
-	
+public class BluetoothService extends Service implements Runnable {
+
+	private static final String TAG = BluetoothService.class.getSimpleName();
+
 	private BluetoothManager btManager;
 	private BluetoothAdapter btAdapter;
 	private BluetoothLeScanner btScanner;
@@ -63,52 +69,112 @@ public class BluetoothService extends Service {
 	public final static String ACTION_BLUETOOTH_STATUS_CHANGE = "action_bluetooth_status_change";
 	public final static String KEY_BLUETOOTH_STATUS = "key_bluetooth_status";
 
+	private LocalBinder binder;
+
+	private boolean scanning;
+
+
+	private ScheduledExecutorService executor;
+	ScheduledFuture future;
+
 	/**
 	 * Bluetooth callback to receive the scan results
 	 */
 	private ScanCallback scanCallback = new ScanCallback() {
-		
+
 		@Override
 		public void onScanResult(int callbackType, ScanResult result) {
-			Log.v(TAG, "ScanResult (" + callbackType+"): "+result.toString());
+			Log.d(TAG, "ScanResult (" + callbackType+"): "+result.toString());
 			DeviceManager.getInstance().addDevice(getApplicationContext(), result);
 		}
-		
+
 	    @Override
 	    public void onBatchScanResults(List<ScanResult> results) {
 	        for (ScanResult sr : results) {
-	        	Log.v("ScanResult - Results", sr.toString());
+	        	Log.d("ScanResult - Results", sr.toString());
 	        	DeviceManager.getInstance().addDevice(getApplicationContext(), sr);
 	        }
 	    }
-	    
+
 		@Override
 		public void onScanFailed(int errorCode) {
-			Log.w(TAG, "Error " + errorCode);
+			Log.w(TAG, "Scan error " + errorCode);
 		}
-		
+
 	};
-	
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		initBluetooth();
+		binder = new LocalBinder();
+		scanning = false;
+		executor = Executors.newSingleThreadScheduledExecutor();
+	}
+
+	@Override
+	public void run() {
+		if (btAdapter!=null)
+			Log.d(TAG, "ADAPTER: " + btAdapter.isDiscovering());
+	}
+
+	@Override
+	public synchronized int onStartCommand(Intent intent, int flags, int startId) {
+		Log.d(TAG, "Starting: " + intent);
+		connect();
+		DeviceManager.getInstance().onBluetoothOn();
+		return START_STICKY;
+	}
+
+	private void connect()  {
+		btScanner = btAdapter.getBluetoothLeScanner();
+		if (btScanner!=null && btAdapter.isEnabled()) {
+			Log.d(TAG, "START SCANNING!");
+			btScanner.startScan(btFilters, btSettings, scanCallback);
+			scanning = true;
+			sendChange(true);
+//			future = executor.scheduleAtFixedRate(this, 0l, 2l, TimeUnit.SECONDS);
+		}
+	}
+
+	private void disconnect() {
+		if (btScanner != null && btAdapter.isEnabled()) {
+			scanning = false;
+			Log.d(TAG, "STOP SCANNING!");
+			btScanner.stopScan(scanCallback);
+		}
+		if (future!=null && !future.isDone())
+			future.cancel(true);
+		btScanner = null;
+		sendChange(false);
+	}
+
 	public class LocalBinder extends Binder {
 		public BluetoothService getService() {
 			return BluetoothService.this;
 		}
 	}
-	
-	private LocalBinder binder = new LocalBinder();
 
 	@Override
 	public IBinder onBind(Intent intent) {
+		Log.i(TAG, "Binding: "+intent);
+		connect();
 		return binder;
 	}
-	
+
+	@Override
+	public boolean onUnbind(Intent intent) {
+		Log.i(TAG, "Unbinding: "+intent);
+		return super.onUnbind(intent);
+	}
+
 	/** Init bluetooth adapter */
 	private void initBluetooth() {
         if (btManager == null)
 			btManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
 		btAdapter = btManager.getAdapter();
 		ScanSettings.Builder builder = new ScanSettings.Builder()
-				.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
+				.setScanMode(ScanSettings.SCAN_MODE_BALANCED);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
 			builder.setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
 		btSettings = builder.build();
@@ -116,41 +182,17 @@ public class BluetoothService extends Service {
 	}
 
 	@Override
-	public void onCreate() {
-	    super.onCreate();
-		initBluetooth();
-	}
-
-	@Override
-	public synchronized int onStartCommand(Intent intent, int flags, int startId) {
-//		if (intent!=null)
-//			Toast.makeText(getApplicationContext(), R.string.bluetooth_service_start, Toast.LENGTH_LONG).show();
-//		else
-//			Toast.makeText(getApplicationContext(), "RESTARTING BLUETOOTH", Toast.LENGTH_SHORT).show();
-		Log.i(TAG, "BLE START... " + intent);
-		btScanner = btAdapter.getBluetoothLeScanner();
-		if (btScanner!=null && btAdapter.isEnabled()) {
-			Log.i(TAG, "...START SCANNING!" + intent);
-			btScanner.startScan(btFilters, btSettings, scanCallback);
-			sendChange(true);
-		}
-		return START_STICKY;
-	}
-
-	@Override
 	public synchronized void onDestroy() {
-		Log.i(TAG, "BLE STOP...");
-		if (btScanner!=null && btAdapter.isEnabled()) {
-			Log.i(TAG, "...STOP SCANNING!");
-			btScanner.stopScan(scanCallback);
-//			Toast.makeText(getApplicationContext(), R.string.bluetooth_service_stop, Toast.LENGTH_LONG).show();
-		}
-		btScanner = null;
-		sendChange(false);
+		Log.i(TAG, "Destroying");
+		disconnect();
+		DeviceManager.getInstance().onBluetoothOff();
+		scanning = false;
 		super.onDestroy();
 	}
 
 	private void sendChange(final boolean status) {
+		SharedPreferences prefs = getSharedPreferences(Utils.PREFS, MODE_PRIVATE);
+		prefs.edit().putBoolean(Utils.PREF_KEY_BLUETOOTH_SERVICE_ENABLED, status).commit();
 		Intent intent = new Intent(ACTION_BLUETOOTH_STATUS_CHANGE);
 		intent.putExtra(KEY_BLUETOOTH_STATUS, status);
 		LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);

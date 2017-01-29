@@ -96,7 +96,7 @@ public class DeviceListAdapter extends BaseAdapter implements DeviceListener {
 	}
 	
 	@Override
-	public void onChange(DeviceEvent event) {
+	public void onDeviceChange(DeviceEvent event) {
 		notifyDataSetChanged();
 	}
 

@@ -25,9 +25,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.TimerTask;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.os.Handler;
@@ -36,7 +36,6 @@ import android.os.Looper;
 import android.util.Log;
 
 import au.com.smarttrace.beacons.tracker.Recording;
-import au.com.smarttrace.beacons.tracker.Tracking;
 
 /**
  * Manage scanned devices in an ordered list and notify listeners for changes
@@ -140,7 +139,7 @@ public class DeviceManager {
 			if (pos>=0) {
 				list.remove(pos);
 				fireDeviceEvent(device, DeviceEvent.TYPE_DEVICE_REMOVED);
-				Log.d(TAG, "Removed device (pos. "+pos+"): "+device.getTitle());
+				Log.d(TAG, "Removed device (pos. "+pos+"): "+device);
 				device.onScanStop();
 			}
 		}
@@ -163,10 +162,9 @@ public class DeviceManager {
 				Device old = list.get(pos);
 				long elapsed = old.getElapsedTime()/1000l;
 				old.setScanResult(device.getScanResult());
-				fireDeviceEvent(device, DeviceEvent.TYPE_DEVICE_UPDATED);
+				fireDeviceEvent(old, DeviceEvent.TYPE_DEVICE_UPDATED, "Scan");
 				Log.d(TAG, "Updated device (pos. "+pos+") after "
-						+ elapsed + "s: " 
-						+ device.getTitle());
+						+ elapsed + "s: " + old);
 				
 			// insert a new device 
 			} else {
@@ -178,7 +176,7 @@ public class DeviceManager {
 					if(device.getClass()!=Device.class) {//TODO: configure in settings
 						list.add(-pos - 1, device);
 						fireDeviceEvent(device, DeviceEvent.TYPE_DEVICE_ADDED);
-						Log.d(TAG, "Added device (pos. " + (-pos - 1) + "): " + device.getTitle());
+						Log.d(TAG, "Added device (pos. " + (-pos - 1) + "): " + device);
 					}
 
 				} catch(NoSuchDeviceException e) {
@@ -199,9 +197,6 @@ public class DeviceManager {
 		listenersList = new LinkedList<DeviceListener>();
 		
 		list = new ArrayList<Device>();
-		timerThread = new HandlerThread("Device Timer Thread");
-		timerThread.start();
-		timerHandler = new Handler(timerThread.getLooper());
 		mainHandler = new Handler(Looper.getMainLooper());
 
 	}
@@ -219,18 +214,21 @@ public class DeviceManager {
 	}
 	
 	/**
-	 * Remove a {@link DeviceListener}
-	 * 
+	 * Add a new {@link DeviceListener}, replacing an eventual old one
+	 *
 	 * @param listener
 	 * 				the listener
 	 */
 	public synchronized void addDeviceListener(DeviceListener listener) {
-		if (!listenersList.contains(listener))
+		int pos = listenersList.indexOf(listener);
+		if (pos>=0)
+			listenersList.set(pos, listener);
+		else
 			listenersList.add(listener);
 	}
 	
 	/**
-	 * Add a new {@link DeviceListener}
+	 * Remove a {@link DeviceListener}
 	 * 
 	 * @param listener
 	 * 				the listener
@@ -267,7 +265,7 @@ public class DeviceManager {
 			@Override
 			protected void syncRun() {
 				for (DeviceListener listener : listenersList)
-					listener.onChange(event);
+					listener.onDeviceChange(event);
 			}
 		});
 	}
@@ -277,7 +275,12 @@ public class DeviceManager {
 	 * //TODO find a better solution
 	 */
 	public synchronized void onBluetoothOn() {
-		timerHandler.post(timedCheck);
+		if (timerHandler==null) {
+			timerThread = new HandlerThread("Device Timer Thread");
+			timerThread.start();
+			timerHandler = new Handler(timerThread.getLooper());
+			timerHandler.post(timedCheck);
+		}
 	}
 	
 	/**
@@ -285,10 +288,19 @@ public class DeviceManager {
 	 * //TODO find a better solution
 	 */
 	public synchronized void onBluetoothOff() {
-		timerHandler.removeCallbacks(timedCheck);
-		for (ListIterator<Device> li = list.listIterator(); li.hasNext() ;) {
-			li.next().onScanStop();
-			li.remove();
+		if (timerHandler!=null) {
+			timerHandler.removeCallbacks(timedCheck);
+			for (ListIterator<Device> li = list.listIterator(); li.hasNext(); ) {
+				Device d = li.next();
+				if (!(d instanceof InternalDevice)) {
+					d.onScanStop();
+					d.fireEvent(DeviceEvent.TYPE_DEVICE_REMOVED);
+					li.remove();
+				}
+			}
+			timerThread.quitSafely();
+			timerThread = null;
+			timerHandler = null;
 		}
 	}
 	
@@ -376,6 +388,7 @@ public class DeviceManager {
 		throw new NoSuchDeviceException("ID="+identifier);
 	}
 
+	/** Current recording session */
 	private Recording recording;
 
 	public boolean isRecording() {
@@ -385,21 +398,49 @@ public class DeviceManager {
 	/**
 	 * Start tracking all the devices listed
 	 *
+	 * @return
+	 * 			true if the current recording actually starts
+	 *
 	 * TODO: configure user based and config based devices
 	 */
-	public synchronized void startTracking() {
-		recording = new Recording();
-		addDeviceListener(recording);
-		for (Device d : list)
-			recording.addDevice(d);
+	public synchronized boolean startTracking() {
+		if (recording==null) {
+			Log.i(TAG, "Start recording");
+			recording = new Recording();
+			addDeviceListener(recording);
+			for (Device d : list)
+				recording.addDevice(d);
+			return true;
+		}
+		return false;
 	}
 
-	public synchronized void stopTracking() {
+	/**
+	 * Cancel current recording
+	 */
+	public synchronized void cancelTracking() {
 		if (recording!=null) {
-			recording.stop();
+			Log.i(TAG, "Cancel recording");
 			removeDeviceListener(recording);
 			recording = null;
 		}
+	}
+
+	/**
+	 * Stop tracling and save it locally
+	 *
+	 * @return
+	 * 			true if the current recording actually stops
+     */
+	public synchronized boolean stopTracking() {
+		if (recording!=null) {
+			Log.i(TAG, "Stop recording");
+			recording.stop();
+			removeDeviceListener(recording);
+			recording = null;
+			return true;
+		}
+		return false;
 	}
 
 }

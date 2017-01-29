@@ -18,10 +18,10 @@
       Francesco Gabbrielli 2017
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
           package="au.com.smarttrace.beacons.transponder"
           android:versionCode="1"
-          android:versionName="0.1"
-          xmlns:tools="http://schemas.android.com/tools">
+          android:versionName="0.1">
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -38,13 +38,16 @@
         android:required="false"/>
     <uses-feature android:name="android.hardware.location.gps"/>
 
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
     <application
         android:name=".BeaconTransponder"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        tools:replace="android:theme"
-        android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+        android:theme="@style/AppTheme">
 
         <activity android:name=".MainActivity">
             <intent-filter>
@@ -53,13 +56,16 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
         <activity
             android:name=".DeviceListActivity"
-            android:label="@string/app_name">
+            android:label="@string/title_activity_devices"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="au.com.smarttrace.beacons.transponder.MainActivity"/>
         </activity>
-        <activity
-            android:name=".LocationActivity"
-            android:label="@string/title_activity_location"/>
 
         <!-- start DEVICE ACTIVITIES -->
         <activity android:name="au.com.smarttrace.beacons.DeviceActivity"/>
@@ -76,7 +82,7 @@
             </intent-filter>
         </receiver>
         <receiver
-            android:name=".data.NetworkReceiver"
+            android:name="au.com.smarttrace.beacons.data.NetworkReceiver"
             android:enabled="true"
             android:exported="false"
             android:permission="android.permission.ACCESS_NETWORK_STATE">
@@ -86,7 +92,7 @@
             </intent-filter>
         </receiver>
         <receiver
-            android:name=".gps.LocationReceiver"
+            android:name="au.com.smarttrace.beacons.gps.LocationReceiver"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
@@ -95,10 +101,28 @@
         </receiver>
 
         <service
-            android:name=".gps.LocationService"
+            android:name="au.com.smarttrace.beacons.gps.LocationService"
             android:enabled="true"
             android:exported="false"/>
 
+        <activity
+            android:name=".RecordingListActivity"
+            android:label="@string/title_recording_list"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="au.com.smarttrace.beacons.transponder.MainActivity"/>
+        </activity>
+        <activity
+            android:name=".RecordingDetailActivity"
+            android:label="@string/title_recording_detail"
+            android:parentActivityName=".RecordingListActivity"
+            android:theme="@style/NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="au.com.smarttrace.beacons.transponder.RecordingListActivity"/>
+        </activity>
     </application>
 
 </manifest>

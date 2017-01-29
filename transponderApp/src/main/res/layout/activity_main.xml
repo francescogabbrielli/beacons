@@ -10,27 +10,68 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"
-    tools:gravity="center"
+    tools:gravity="center_horizontal"
     tools:context="au.com.smarttrace.beacons.transponder.MainActivity">
 
+    <!-- Recording log -->
     <TextView
         android:id="@+id/recording_log"
+        android:inputType="none"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:scrollbarAlwaysDrawVerticalTrack="true"/>
+        android:scrollbars="vertical"
+        android:scrollIndicators="top|bottom"
+        android:overScrollMode="ifContentScrolls"
+        android:scrollbarAlwaysDrawVerticalTrack="true"
+        android:fadeScrollbars="false"
+        android:gravity="left|bottom"/>
 
-    <ToggleButton
-        android:layout_margin="4dp"
-        android:id="@+id/recording_button"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="center_horizontal"
-        android:checked="false"
-        android:enabled="false"
-        android:background="@drawable/ic_recording"
-        android:textAlignment="center"
-        android:textOff=""
-        android:textOn=""/>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:gravity="center_vertical">
+
+        <!-- Recording button -->
+        <ToggleButton
+            android:id="@+id/recording_button"
+            android:layout_margin="4dp"
+            style="@android:style/TextAppearance.Small.Inverse"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_centerInParent="true"
+            android:checked="false"
+            android:enabled="false"
+            android:background="@drawable/ic_recording"
+            android:textAlignment="center"
+            android:textOff=""
+            android:textOn=""/>
+
+        <TextView
+            android:id="@+id/recording_ic_gps"
+            android:layout_toRightOf="@id/recording_button"
+            android:layout_centerHorizontal="false"
+            android:layout_centerVertical="true"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:enabled="false"
+            android:background="@drawable/ic_gps"
+            android:layout_gravity="center_vertical"/>
+
+        <TextView
+            android:id="@+id/recording_ic_bt"
+            android:layout_toRightOf="@id/recording_ic_gps"
+            android:layout_centerHorizontal="false"
+            android:layout_centerVertical="true"
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:enabled="false"
+            android:drawableLeft="@drawable/ic_bt"
+            android:text="0"
+            android:layout_gravity="center_vertical"/>
+
+
+    </RelativeLayout>
 
 </LinearLayout>

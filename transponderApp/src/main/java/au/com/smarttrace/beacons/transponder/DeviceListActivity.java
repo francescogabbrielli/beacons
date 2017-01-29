@@ -33,7 +33,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 import au.com.smarttrace.beacons.Device;
 
-public class DeviceListActivity extends Activity implements OnItemClickListener {
+public class DeviceListActivity extends AbstractChildActivity implements OnItemClickListener {
 	
 	private DeviceListAdapter listAdapter;
 	
@@ -67,20 +67,20 @@ public class DeviceListActivity extends Activity implements OnItemClickListener 
     	startActivity(intent);
     }
     
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		getMenuInflater().inflate(R.menu.main, menu);
-		return true;
-	}
-	
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		int id = item.getItemId();
-		if (id == R.id.action_settings) {
-			startActivity(new Intent(getApplicationContext(), LocationActivity.class));
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
-	}
+//	@Override
+//	public boolean onCreateOptionsMenu(Menu menu) {
+//		getMenuInflater().inflate(R.menu.device, menu);
+//		return true;
+//	}
+//
+//	@Override
+//	public boolean onOptionsItemSelected(MenuItem item) {
+//		int id = item.getItemId();
+//		if (id == R.id.action_settings) {
+//			startActivity(new Intent(getApplicationContext(), LocationActivity.class));
+//			return true;
+//		}
+//		return super.onOptionsItemSelected(item);
+//	}
 
 }

@@ -25,8 +25,13 @@
 
     <item
         android:id="@+id/menu_devices"
-        android:orderInCategory="100"
+        android:orderInCategory="1"
         android:title="@string/action_list_devices"/>
+
+    <item
+        android:id="@+id/menu_recordings"
+        android:orderInCategory="2"
+        android:title="@string/action_list_recordings"/>
 
     <item
         android:id="@+id/menu_settings"

@@ -22,6 +22,5 @@
     <string name="tzone_humiture_CHARACTERISTIC_TRANSMIT_POWER"><![CDATA[27763B14-999C-4D6A-9FC4-C7272BE10900]]></string>
     <string name="tzone_humiture_CHARACTERISTIC_LOG_RECORDS"><![CDATA[]]>27763B18-999C-4D6A-9FC4-C7272BE10900</string>
     <string name="tzone_humiture_CHARACTERISTIC_SYSN"><![CDATA[27763B21-999C-4D6A-9FC4-C7272BE10900]]></string>
-    
-        
+
 </resources>

@@ -99,7 +99,7 @@ public class DeviceActivity extends Activity implements DeviceListener {
 	}
 	
 	@Override
-	public void onChange(DeviceEvent event) {
+	public void onDeviceChange(DeviceEvent event) {
 		//TODO? or remove?
 	}
 	

@@ -38,11 +38,9 @@ public class BluetoothReceiver extends BroadcastReceiver {
 			switch (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
 				case BluetoothAdapter.STATE_ON:
 					context.startService(serviceIntent);
-					DeviceManager.getInstance().onBluetoothOn();
 					break;
 				case BluetoothAdapter.STATE_TURNING_OFF:
 					context.stopService(serviceIntent);
-					DeviceManager.getInstance().onBluetoothOff();
 					break;
 			}
 			

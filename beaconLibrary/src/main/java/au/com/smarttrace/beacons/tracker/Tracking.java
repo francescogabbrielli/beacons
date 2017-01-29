@@ -1,5 +1,6 @@
 package au.com.smarttrace.beacons.tracker;
 
+import android.content.ComponentCallbacks;
 import android.content.Context;
 
 import java.util.ArrayList;
@@ -7,14 +8,35 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+/**
+ *
+ */
 public class Tracking {
 
-    class TrackingComponent<T> {
+    /**
+     *
+     * @param <T>
+     */
+    public class Data<T> {
         List<Long> timeline;
         List<T> data;
+        public int size() {
+            return data.size();
+        }
+
+        @Override
+        public String toString() {
+            return data.toString();
+        }
+    }
+
+    /** Internal data */
+    private class TrackingComponent<T> extends Data<T>{
         transient Class<T> dataClass;
         transient TrackingCompacter<T> compacter;
+        TrackingComponent() {}
         TrackingComponent(String key, Class<T> dataClass) {
             this.dataClass = dataClass;
             timeline = new ArrayList<>();
@@ -42,33 +64,95 @@ public class Tracking {
         }
     }
 
-    Map<String, TrackingComponent> components;
+    /** Exposed data */
+    private Map<String, Data> components;
 
-    private Context context;
+    /** Application context, needed to read resource files */
+    private transient Context context;
 
-    public Tracking(Context context) {
-        this.context = context;
+    /**
+     * Used for serialization purposes
+     */
+    public Tracking() {
         components = new LinkedHashMap<>();
     }
 
-    private <T> TrackingComponent<T> getComponent(String sampleKey, Class<T> sampleClass) {
-        TrackingComponent<T> c = components.get(sampleKey);
-        if (c==null) {
+    /**
+     * Used for active recording
+     */
+    public Tracking(Context context) {
+        this();
+        this.context = context;
+    }
+
+    /**
+     * Add a freshly read sample to this device tracking
+     *
+     * @param sampleKey
+     *              the sample key
+     * @param value
+     *              the sample value
+     * @return
+     *          true if the data was actually added
+     */
+    public boolean addSample(String sampleKey, Object value) {
+        return addSample(System.currentTimeMillis(), sampleKey, value);
+    }
+
+    /**
+     * Add a sample, read at a specified time, to this device tracking
+     *
+     * @param time
+     *              the time of the reading
+     * @param sampleKey
+     *              the sample key
+     * @param value
+     *              the sample value
+     * @return
+     *          true if the data was actually added
+     */
+    public boolean addSample(long time, String sampleKey, Object value) {
+        if (value==null)
+            return false;
+        TrackingComponent e = (TrackingComponent) getSamples(sampleKey, value.getClass());
+        return e.add(time, value);
+    }
+
+    /** Read only */
+    public <T> Data<T> getSamples(String sampleKey) {
+        return getSamples(sampleKey, null);
+    }
+
+    /**
+     * Return all the samples for the current device tracking
+     *
+     * @param sampleKey
+     *              the key of the sample
+     * @param sampleClass
+     *              the class of the sample
+     * @param <T>
+     *              the data type of the sample
+     * @return
+     *          the data
+     */
+    public <T> Data<T> getSamples(String sampleKey, Class<T> sampleClass) {
+        Data<T> c = components.get(sampleKey);
+        if (c==null && sampleClass!=null) {
             c = new TrackingComponent<>(sampleKey, sampleClass);
             components.put(sampleKey, c);
         }
         return c;
     }
 
-    public boolean addSample(String sampleKey, Object value) {
-        return addSample(System.currentTimeMillis(), sampleKey, value);
+    public Set<String> getKeys() {
+        return components.keySet();
     }
 
-    public boolean addSample(long time, String sampleKey, Object value) {
-        if (value==null)
-            return false;
-        TrackingComponent e = getComponent(sampleKey, value.getClass());
-        return e.add(time, value);
+    public int size() {
+        int ret = 0;
+        for (Data d : components.values())
+            ret += d.size();
+        return ret;
     }
 
 }

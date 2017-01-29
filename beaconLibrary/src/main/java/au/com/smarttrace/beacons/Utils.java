@@ -21,10 +21,16 @@
 package au.com.smarttrace.beacons;
 
 import android.bluetooth.BluetoothGatt;
+import android.content.Context;
+import android.content.SharedPreferences;
 
 public class Utils {
 	
 	public final static int GATT_ERROR = 0x85;
+
+	public final static String PREFS = "prefs";
+	public final static String PREF_KEY_LOCATION_SERVICE_ENABLED = "location_service_enabled";
+	public final static String PREF_KEY_BLUETOOTH_SERVICE_ENABLED = "bluetooth_service_enabled";
 	
 	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
@@ -69,6 +75,11 @@ public class Utils {
 		default:
 			return "Unknown error code: "+status; 
 		}
-	}	
+	}
+
+	public static boolean getBooleanPref(Context context, String key) {
+		SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+		return prefs.getBoolean(key, false);
+	}
 
 }

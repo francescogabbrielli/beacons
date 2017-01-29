@@ -23,14 +23,18 @@
     <string name="app_name">Beacon Transponder</string>
 
     <string name="action_list_devices">Devices</string>
+    <string name="action_list_recordings">Recordings</string>
     <string name="action_settings">Settings</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="title_activity_location">LocationActivity</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="title_gps">Location Service</string>
 
-    <string name="latitude">Latitude</string>
-    <string name="longitude">Longitude</string>
+    <string name="title_activity_location">LocationActivity</string>
+    <string name="title_activity_devices">Device List</string>
+    <string name="hello_world">Hello world!</string>
+
+
+    <string name="title_recording_list">Recording List</string>
+    <string name="title_recording_detail">Recording Detail</string>
+    <string name="title_activity_main2">Main2Activity</string>
 
 </resources>

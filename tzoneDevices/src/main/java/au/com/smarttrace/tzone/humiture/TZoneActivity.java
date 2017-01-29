@@ -179,7 +179,7 @@ public class TZoneActivity extends Activity
 	}
 	
 	@Override
-	public void onChange(DeviceEvent event) {
+	public void onDeviceChange(DeviceEvent event) {
 		
 		if (event.getDevice()==device) {
 			

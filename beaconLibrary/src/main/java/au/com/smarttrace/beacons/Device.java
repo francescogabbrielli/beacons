@@ -35,6 +35,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
@@ -57,7 +58,12 @@ import au.com.smarttrace.beacons.tracker.Tracking;
  * {@link BluetoothGattCallback}s  
  */
 public class Device extends BluetoothGattCallback implements Comparable<Device> {
-	
+
+	public static final String KEY_LOCATION			= "location";
+	public static final String KEY_TEMPERATURE		= "temperature";
+	public static final String KEY_HUMIDITY			= "humidity";
+	public static final String KEY_LIGHT 			= "light";
+
 	public final static int PROGRESS_NONE = -1;
 	public final static int PROGRESS_COMPLETE = 100;
 	public final static int PROGRESS_INDEFINITE = Integer.MAX_VALUE;
@@ -374,7 +380,7 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	public synchronized void disconnect() {
 		if (gatt!=null) {
 			connectionState = BluetoothProfile.STATE_DISCONNECTING;
-			gatt.disconnect();
+			//gatt.disconnect();
 			gatt.close();
 			gatt = null;
 		}
@@ -537,6 +543,14 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 				
 	}
 
+	protected void runOnUIThread(Runnable r) {
+		new Handler(context.getMainLooper()).post(r);
+	}
+
+	protected void runOnUIThread(Runnable r, long delay) {
+		new Handler(context.getMainLooper()).postDelayed(r, delay);
+	}
+
 //____________________________________________________________________________
 //
 // o <editor-fold desc="-> APPLICATION CALLBACKS IMPLEMENTATION" defaultstate="collapsed">
@@ -625,7 +639,7 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 // V
 
 	@Override
-    public synchronized void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+    public synchronized void onConnectionStateChange(final BluetoothGatt gatt, int status, int newState) {
 
 		super.onConnectionStateChange(gatt, status, newState);
 		
@@ -649,7 +663,12 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
     	connectionState = newState;
         switch (newState) {
             case BluetoothProfile.STATE_CONNECTED:
-            	gatt.discoverServices();
+				runOnUIThread(new Runnable() {
+					@Override
+					public void run() {
+						gatt.discoverServices();
+					}
+				});
                 Log.i(toString(), "Connected");
                 DeviceManager.getInstance().fireDeviceEvent(this, DeviceEvent.TYPE_DEVICE_CONNECTED);
                 break;
@@ -765,5 +784,5 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 // V
 // o END GATT CALLBACK</editor-fold>
 //_____________________________________________________________________________
-	
+
 }

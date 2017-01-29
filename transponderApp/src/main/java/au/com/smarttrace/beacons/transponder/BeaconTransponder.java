@@ -23,14 +23,16 @@ package au.com.smarttrace.beacons.transponder;
 import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
-import android.content.Context;
 import android.content.Intent;
 import android.location.LocationManager;
 
+import org.w3c.dom.ls.LSException;
+
 import au.com.smarttrace.beacons.BluetoothService;
 import au.com.smarttrace.beacons.DeviceManager;
-import au.com.smarttrace.beacons.transponder.gps.GPSDevice;
-import au.com.smarttrace.beacons.transponder.gps.LocationService;
+import au.com.smarttrace.beacons.gps.GPSDevice;
+import au.com.smarttrace.beacons.gps.LocationService;
+import au.com.smarttrace.beacons.tracker.RecordingManager;
 
 public class BeaconTransponder extends Application {
 	
@@ -51,7 +53,6 @@ public class BeaconTransponder extends Application {
 		BluetoothAdapter ba = bm.getAdapter();
 		return ba!=null && ba.isEnabled();
 	}
-
 	
 	@Override
 	public void onCreate() {
@@ -62,15 +63,17 @@ public class BeaconTransponder extends Application {
 		
 		// check if bluetooth is on and start the bluetooth service
 		if (isBluetoothEnabled()) {
-			DeviceManager.getInstance().onBluetoothOn();
-			startService(new Intent(this, BluetoothService.class));
+			Intent intent = new Intent(this, BluetoothService.class);
+			startService(intent);
 		}
 
 		// check if GPS is on and start the location service
 		if (isLocationEnabled()) {
-			startService(new Intent(this, LocationService.class));
-			DeviceManager.getInstance().addInternalDevice(this, GPSDevice.class);
+			Intent intent = new Intent(LocationService.ACTION_START_SERVICE, null, this, LocationService.class);
+			startService(intent);
 		}
+
+		RecordingManager.getInstance().init(this);
 		
 	}
 	

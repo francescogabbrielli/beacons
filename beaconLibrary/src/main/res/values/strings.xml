@@ -27,5 +27,10 @@
     <string name="device_last_seen">Last seen</string>
     
     <string name="title_activity_device">Device Services</string>
+
+    <string name="title_gps">Location Service</string>
+    <string name="latitude">Latitude</string>
+    <string name="longitude">Longitude</string>
+
     
 </resources>
