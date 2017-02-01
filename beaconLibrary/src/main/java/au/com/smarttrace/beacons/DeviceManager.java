@@ -135,6 +135,8 @@ public class DeviceManager {
 		Remover(Device d) {super(d);}
 		@Override
 		public void syncRun() {
+            if (turningOff)
+                return;
 			int pos = Collections.binarySearch(list, device);
 			if (pos>=0) {
 				list.remove(pos);
@@ -153,7 +155,10 @@ public class DeviceManager {
 		Adder(Device d) {super(d);}		
 		@Override
 		public void syncRun() {
-			
+
+            if (turningOff)
+                return;
+
 			int pos = Collections.binarySearch(list, device);
 			
 			// update a device already present
@@ -162,9 +167,11 @@ public class DeviceManager {
 				Device old = list.get(pos);
 				long elapsed = old.getElapsedTime()/1000l;
 				old.setScanResult(device.getScanResult());
-				fireDeviceEvent(old, DeviceEvent.TYPE_DEVICE_UPDATED, "Scan");
+				device = old;
+				fireDeviceEvent(device, DeviceEvent.TYPE_DEVICE_UPDATED, "Scan");
+				Log.i(device.toString(),"signal = "+device.getSignal()+"dB");
 				Log.d(TAG, "Updated device (pos. "+pos+") after "
-						+ elapsed + "s: " + old);
+						+ elapsed + "s: " + device);
 				
 			// insert a new device 
 			} else {
@@ -276,12 +283,15 @@ public class DeviceManager {
 	 */
 	public synchronized void onBluetoothOn() {
 		if (timerHandler==null) {
+            turningOff = false;
 			timerThread = new HandlerThread("Device Timer Thread");
 			timerThread.start();
 			timerHandler = new Handler(timerThread.getLooper());
 			timerHandler.post(timedCheck);
 		}
 	}
+
+    private boolean turningOff;
 	
 	/**
 	 * Called when bluetooth is turned off
@@ -289,6 +299,7 @@ public class DeviceManager {
 	 */
 	public synchronized void onBluetoothOff() {
 		if (timerHandler!=null) {
+            turningOff = true;
 			timerHandler.removeCallbacks(timedCheck);
 			for (ListIterator<Device> li = list.listIterator(); li.hasNext(); ) {
 				Device d = li.next();
@@ -396,7 +407,7 @@ public class DeviceManager {
 	}
 
 	/**
-	 * Start tracking all the devices listed
+	 * Start trackingOn all the devices listed
 	 *
 	 * @return
 	 * 			true if the current recording actually starts

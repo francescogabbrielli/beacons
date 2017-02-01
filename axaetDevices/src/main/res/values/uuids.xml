@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UUIDs (services, characteristics, descriptors) -->
+<resources>
+    <string name="sense_bio_SERVICE_TH">0000fff0-0000-1000-8000-00805f9b34fb</string>
+    <string name="sense_bio_CHARACTERISTIC_TH">0000fff3-0000-1000-8000-00805f9b34fb</string>
+    <string name="sense_bio_CHARACTERISTIC_ENABLE">0000fff2-0000-1000-8000-00805f9b34fb</string>
+    <string name="sense_bio_CHARACTERISTIC_ENABLE_TH">0000fff4-0000-1000-8000-00805f9b34fb</string>
+    <string name="sense_bio_DESCRIPTOR_ENABLER">00002902-0000-1000-8000-00805f9b34fb</string>
+</resources>

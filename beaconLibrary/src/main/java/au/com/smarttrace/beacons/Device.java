@@ -23,6 +23,9 @@ package au.com.smarttrace.beacons;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import android.app.Activity;
@@ -36,6 +39,7 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
@@ -60,9 +64,7 @@ import au.com.smarttrace.beacons.tracker.Tracking;
 public class Device extends BluetoothGattCallback implements Comparable<Device> {
 
 	public static final String KEY_LOCATION			= "location";
-	public static final String KEY_TEMPERATURE		= "temperature";
-	public static final String KEY_HUMIDITY			= "humidity";
-	public static final String KEY_LIGHT 			= "light";
+    public static final String KEY_BATTERY 			= "battery";
 
 	public final static int PROGRESS_NONE = -1;
 	public final static int PROGRESS_COMPLETE = 100;
@@ -104,8 +106,10 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	/** Additional GATT callbacks */
 	private List<BluetoothGattCallback> callbacks;
 	
-	/** 
+	/**
+     * <p>
 	 * The current GATT operation progress:
+     *
 	 * <ul>
 	 * <li><b>0-100</b> = current operation progress;
 	 * <li><b>INFINITY</b> = indefinite progress;
@@ -113,11 +117,13 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	 * </ul>
 	 */
 	private int gattProgress = PROGRESS_NONE;
-	
-	
+
+    private ScheduledExecutorService exec;
+
 	/** Standard empty constructor (does nothing) */
 	public Device() {
-		callbacks = new LinkedList<BluetoothGattCallback>();
+        exec = Executors.newSingleThreadScheduledExecutor();
+        callbacks = new LinkedList<BluetoothGattCallback>();
 	}
 	
 	/**
@@ -225,11 +231,7 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	public int getConnectionState() {
 		return connectionState;//XXX: local copy of connection state
 	}
-	
-	public boolean isAutoConnect() {
-		return false;
-	}
-	
+
 	/**
 	 * Title of the device displayed on the main device tab
 	 * 
@@ -302,8 +304,10 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 // V
 	
 	/**
-	 * 
+	 * The device detail activity
+     *
 	 * @return
+     *          the activity class
 	 */
 	public Class<? extends Activity> getMainActivity() {
 		return DeviceActivity.class;
@@ -380,8 +384,8 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	public synchronized void disconnect() {
 		if (gatt!=null) {
 			connectionState = BluetoothProfile.STATE_DISCONNECTING;
-			//gatt.disconnect();
-			gatt.close();
+			gatt.disconnect();
+//			gatt.close();
 			gatt = null;
 		}
 	}
@@ -416,7 +420,7 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	 * Notify interested listeners in change to the device originated
 	 * in the device (readings)
 	 * 
-	 * TODO: implements internal listeners? 
+	 * ???: implement internal listeners in this Device class?
 	 */
 	protected void fireUpdate() {
 		lastTime = SystemClock.elapsedRealtimeNanos();
@@ -461,33 +465,41 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	class ReadLock {UUID uuid;}
 	private final static long TIMEOUT_READ_ALL = 10000;
 	private final ReadLock readLock = new ReadLock();
-	private AsyncTask<Void, Integer, Exception> activeTask;
-	public AsyncTask<Void, Integer, Exception> getActiveTask() {
-		return activeTask;
-	}
-	
+	private AsyncTask<String, Integer, Exception> activeTask;
+
 	/**
 	 * Start reading all characteristics of a service
 	 * 
 	 * @param service
 	 * 					the service to read from
 	 */
-	protected void readAllCharacteristics(final BluetoothGattService service) {
+	protected synchronized void readAllCharacteristics(final BluetoothGattService service, String... characteristicUUIDs) {
 		
 		if (activeTask!=null)
 			return;
 		
-		activeTask = new AsyncTask<Void, Integer, Exception>() {
+		activeTask = new AsyncTask<String, Integer, Exception>() {
+
 			@Override
-			protected Exception doInBackground(Void... params) {
+			protected Exception doInBackground(String... uuids) {
 				
 				synchronized (readLock) {
 					
 					try {
 						
 						long t = System.currentTimeMillis();
-						List<BluetoothGattCharacteristic> list = 
-								service.getCharacteristics();
+
+						// list characteristics
+						List<BluetoothGattCharacteristic> list = null;
+						service.getCharacteristics();
+						if (uuids!=null) {
+							list = new LinkedList<>();
+							for (String u : uuids)
+								list.add(service.getCharacteristic(UUID.fromString(u)));
+						} else
+							list = service.getCharacteristics();
+
+						// locking cycle
 						int tot = list.size();
 						int count = 0;
 						for (BluetoothGattCharacteristic characteristic : list) { 
@@ -537,18 +549,19 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 				gattProgress = PROGRESS_NONE;
 				activeTask = null;
 				fireEvent(DeviceEvent.TYPE_DEVICE_PROGRESS);
+                onReadAll();
 			}
 			
-		}.execute();
-				
+		}.execute(characteristicUUIDs);
+
 	}
 
-	protected void runOnUIThread(Runnable r) {
-		new Handler(context.getMainLooper()).post(r);
+	protected void runOnThread(Runnable r) {
+        runOnThread(r, 0l);
 	}
 
-	protected void runOnUIThread(Runnable r, long delay) {
-		new Handler(context.getMainLooper()).postDelayed(r, delay);
+	protected void runOnThread(Runnable r, long delay) {
+        exec.schedule(r, delay, TimeUnit.MILLISECONDS);
 	}
 
 //____________________________________________________________________________
@@ -570,7 +583,7 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	 * @see DeviceManager
 	 */
 	public void onScanStop() {
-
+        exec.shutdownNow();
 	}
 
     private Tracking tracking;
@@ -580,7 +593,7 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
     }
 
 	/**
-	 * Add a sample to the current tracking (if the device is being tracked)
+	 * Add a sample to the current trackingOn (if the device is being tracked)
 	 * at the current time (now)
 	 *
 	 * @param sampleKey
@@ -596,7 +609,7 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	}
 
 	/**
-	 * Add a sample to the current tracking (if the device is being tracked)
+	 * Add a sample to the current trackingOn (if the device is being tracked)
 	 * at the specified time
 	 *
 	 * @param time
@@ -614,17 +627,19 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	}
 
 	/**
-	 * Called when the tracking is started
+	 * Called when the trackingOn is started
 	 */
 	public synchronized void onTrackingStart(Tracking tracking) {
         this.tracking = tracking;
+        Log.i(toString(), "Start tracking");
 	}
 
 	/**
-	 * Called when the tracking is stopped
+	 * Called when the trackingOn is stopped
 	 */
 	public synchronized void onTrackingStop() {
         tracking = null;
+        Log.i(toString(), "Stop tracking");
 	}
 
 // |
@@ -643,12 +658,13 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 
 		super.onConnectionStateChange(gatt, status, newState);
 		
-		Log.i(toString(), "Connection state change " + connectionState + " -> " + newState
+		Log.v(toString(), "Connection state change " + connectionState + " -> " + newState
 				+ ": " + Utils.getStatusMessage(status));
 		
 		// disconnect in case of wrong connection change 
 		if (status!=BluetoothGatt.GATT_SUCCESS) {
-			// avoid loops!
+            Log.w(toString(), "Connection error?");
+            // avoid loops!
 			if (!connectionError) {
 				disconnect();
 				DeviceManager.getInstance().fireDeviceEvent(this,
@@ -663,19 +679,19 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
     	connectionState = newState;
         switch (newState) {
             case BluetoothProfile.STATE_CONNECTED:
-				runOnUIThread(new Runnable() {
+				runOnThread(new Runnable() {
 					@Override
 					public void run() {
 						gatt.discoverServices();
 					}
 				});
-                Log.i(toString(), "Connected");
+                Log.d(toString(), "Connected");
                 DeviceManager.getInstance().fireDeviceEvent(this, DeviceEvent.TYPE_DEVICE_CONNECTED);
                 break;
             case BluetoothProfile.STATE_DISCONNECTED:
-                Log.i(toString(), "Disconnected");
+                Log.d(toString(), "Disconnected");
                 DeviceManager.getInstance().fireDeviceEvent(this, DeviceEvent.TYPE_DEVICE_DISCONNECTED);
-                Device.this.gatt = null;
+                gatt.close();
                 break;
         }
 		
@@ -689,7 +705,7 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 		
 		super.onServicesDiscovered(gatt, status);
 		
-		Log.i(toString(), String.format(
+		Log.v(toString(), String.format(
 				"Services discovered: %s", Utils.getStatusMessage(status)));
 		
 		for (BluetoothGattCallback callback : callbacks)
@@ -699,25 +715,31 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 	@Override
 	public synchronized void onCharacteristicChanged(BluetoothGatt gatt,
 			BluetoothGattCharacteristic characteristic) {
-		
-		super.onCharacteristicChanged(gatt, characteristic);
-		
-		Log.i(toString(), String.format(
-				"Characteristic changed %s=%s",
-					characteristic.getUuid(),
-					Utils.bytesToHex(characteristic.getValue())));
-		
-		for (BluetoothGattCallback callback : callbacks)
-			callback.onCharacteristicChanged(gatt, characteristic);
-	}
-	
-	@Override
+
+        super.onCharacteristicChanged(gatt, characteristic);
+
+        Log.i(toString(), String.format(
+                "Characteristic changed %s=%s",
+                characteristic.getUuid(),
+                Utils.bytesToHex(characteristic.getValue())));
+
+        for (BluetoothGattCallback callback : callbacks)
+            callback.onCharacteristicChanged(gatt, characteristic);
+    }
+
+    @Override
+    public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+        super.onMtuChanged(gatt, mtu, status);
+        Log.w(toString(), String.format("MTU changed -> %d ", mtu));
+    }
+
+    @Override
 	public synchronized void onCharacteristicRead(BluetoothGatt gatt,
 			BluetoothGattCharacteristic characteristic, int status) {
 		
 		super.onCharacteristicRead(gatt, characteristic, status);
 		
-		Log.i(toString(), "Characteristic read "
+		Log.v(toString(), "Characteristic read "
 				+ characteristic.getUuid()
 				+ "=" + Utils.bytesToHex(characteristic.getValue())
 				+ ": " + Utils.getStatusMessage(status));
@@ -754,7 +776,7 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 		
 		super.onDescriptorRead(gatt, descriptor, status);
 		
-		Log.i(toString(), "Descriptor read "
+		Log.v(toString(), "Descriptor read "
 				+ descriptor.getUuid()
 				+ "=" + Utils.bytesToHex(descriptor.getValue())
 				+ ": " + Utils.getStatusMessage(status));
@@ -779,6 +801,10 @@ public class Device extends BluetoothGattCallback implements Comparable<Device> 
 			callback.onDescriptorWrite(gatt, descriptor, status);
 		
 	}
+
+    public void onReadAll() {
+
+    }
 	
 // |
 // V

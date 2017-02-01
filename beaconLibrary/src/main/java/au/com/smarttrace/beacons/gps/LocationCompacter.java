@@ -1,6 +1,8 @@
-package au.com.smarttrace.beacons.tracker;
+package au.com.smarttrace.beacons.gps;
 
 import android.location.Location;
+
+import au.com.smarttrace.beacons.tracker.TrackingCompacter;
 
 /**
  *

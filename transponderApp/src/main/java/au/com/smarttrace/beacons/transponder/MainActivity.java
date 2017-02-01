@@ -179,7 +179,7 @@ public class MainActivity extends AppCompatActivity implements
         LocalBroadcastManager.getInstance(this).unregisterReceiver(statusReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(permissionReceiver);
 //        unbind();
-        super.onStop();
+        super.onStop()  ;
     }
 
     private void updateUIStatus() {
@@ -227,11 +227,15 @@ public class MainActivity extends AppCompatActivity implements
             case DeviceEvent.TYPE_DEVICE_ADDED:
             case DeviceEvent.TYPE_DEVICE_REMOVED:
                 updateUIStatus();
-            default:
+                break;
+            case DeviceEvent.TYPE_DEVICE_ERROR:
+            case DeviceEvent.TYPE_DEVICE_UPDATED:
                 if (DeviceManager.getInstance().isRecording()) {
-                    Log.i(BeaconTransponder.TAG, String.valueOf(event.getData()));
+                    Log.i(event.getDevice().toString()+"["+event.getType()+"]", String.valueOf(event.getData()));
+                    if ("scan".equalsIgnoreCase(String.valueOf(event.getData())))
+                        return;
                     TextView tv = (TextView) findViewById(R.id.recording_log);
-                    tv.append(Html.fromHtml("<b>" + event.getDevice() + "</b>"));
+                    tv.append(Html.fromHtml("<b>" + event.getDevice() + "[" + event.getType() + "]</b>"));
                     tv.append(" ");
                     tv.append(String.valueOf(event.getData()));
                     tv.append("\n");

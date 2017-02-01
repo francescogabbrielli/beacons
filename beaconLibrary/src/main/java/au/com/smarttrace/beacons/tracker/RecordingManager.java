@@ -102,6 +102,10 @@ public class RecordingManager {
                 try {
                     time = SystemClock.currentThreadTimeMillis();
                     h = new Recording.Header(newRecording);
+                    if (h.readings==0) {
+                        cancel(false);
+                        return null;
+                    }
                     headers.add(h);
                     saveHeaders();
                 } catch(Exception e) {
@@ -110,6 +114,11 @@ public class RecordingManager {
                     time = SystemClock.currentThreadTimeMillis()-time;
                 }
                 return null;
+            }
+
+            @Override
+            protected void onCancelled() {
+                //TODO
             }
 
             @Override

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="compacter_location">au.com.smarttrace.beacons.gps.LocationCompacter</string>
+    <string name="compacter_temperature">au.com.smarttrace.beacons.temperature.ThresholdCompacter</string>
+    <string name="compacter_humidity">au.com.smarttrace.beacons.temperature.ThresholdCompacter</string>
+    <string name="compacter_battery">au.com.smarttrace.beacons.tracker.IntCompacter</string>
+</resources>

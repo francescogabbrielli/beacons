@@ -40,12 +40,13 @@
 	        android:layout_height="80sp"
 	        android:orientation="vertical">
 	        
-	        <ImageView 
+	        <ImageView
 	            android:id="@+id/device_signal"
-	            android:layout_width="64sp"
-	            android:layout_height="0dp"
+	            android:layout_width="48dp"
+	            android:layout_height="48dp"
+                android:scaleType="center"
 	            android:contentDescription="@string/device_signal_strength"
-	            android:layout_weight="0"/>
+				android:src="@drawable/ic_signal"/>
 		        
 	        <TextView 
 	            android:id="@+id/device_battery"

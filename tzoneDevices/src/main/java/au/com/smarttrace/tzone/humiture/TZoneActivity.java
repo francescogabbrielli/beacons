@@ -81,10 +81,10 @@ public class TZoneActivity extends Activity
 
 		((TextView) findViewById(R.id.tzone_humiture_all_serial))
 						.setText(device.getSerialNumber());
-		((TextView) findViewById(R.id.tzone_humiture_all_temperature))
-						.setText(String.format("%2.2f°C", device.temperature));
-		((TextView) findViewById(R.id.tzone_humiture_all_humidity))
-						.setText(String.format("%2.2f%%", device.humidity));
+//		((TextView) findViewById(R.id.tzone_humiture_all_temperature))
+//						.setText(String.format("%2.2f°C", device.temperature));
+//		((TextView) findViewById(R.id.tzone_humiture_all_humidity))
+//						.setText(String.format("%2.2f%%", device.humidity));
 		((TextView) findViewById(R.id.tzone_humiture_all_records))
 						.setText(String.format("%d", device.records));
 		((TextView) findViewById(R.id.tzone_humiture_all_lastseen))

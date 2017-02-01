@@ -27,6 +27,7 @@ android {
 }
 
 dependencies {
-    testCompile 'junit:junit:4.12'
     compile project(':beaconLibrary')
+    compile 'junit:junit:4.12'
+    androidTestCompile 'com.android.support.test:runner:0.5'
 }

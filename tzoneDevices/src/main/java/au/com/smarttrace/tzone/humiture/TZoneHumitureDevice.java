@@ -2,8 +2,8 @@ package au.com.smarttrace.tzone.humiture;
 
 import java.util.Arrays;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothGatt;
@@ -16,23 +16,17 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
-import au.com.smarttrace.beacons.Device;
-import au.com.smarttrace.beacons.DeviceEvent;
+
 import au.com.smarttrace.beacons.Utils;
+import au.com.smarttrace.beacons.temperature.TemperatureDevice;
 
 import com.TZONE.Bluetooth.Temperature.Model.CharacteristicHandle;
 
 /**
  * TZone Digital Humiture Recorder
  */
-public class TZoneHumitureDevice extends Device {
-		
-	/** Temperature */
-	double temperature;
-	
-	/** Humidity */
-	double humidity;
-	
+public class TZoneHumitureDevice extends TemperatureDevice implements Runnable{
+
 	/** Number of data logger records */
 	int records;
 	
@@ -41,6 +35,7 @@ public class TZoneHumitureDevice extends Device {
 	
 	public TZoneHumitureDevice() {
 		tzoneDevice = new com.TZONE.Bluetooth.Temperature.Model.Device();
+        deviceStatus = STATE_NULL;
 	}
 	
 	@Override
@@ -61,8 +56,8 @@ public class TZoneHumitureDevice extends Device {
 	private void copyFromTzone() {
 		serialNumber= tzoneDevice.SN;
 		battery		= tzoneDevice.Battery;
-		temperature = tzoneDevice.Temperature;
-		humidity 	= tzoneDevice.Humidity;
+		temperature = (float) tzoneDevice.Temperature;
+		humidity 	= (float) tzoneDevice.Humidity;
 		records		= tzoneDevice.SavaCount;
 		lastTime	= SystemClock.elapsedRealtimeNanos();
 	}
@@ -101,13 +96,13 @@ public class TZoneHumitureDevice extends Device {
 	        BluetoothGattService s = gatt.getService(
 	        				getUUID(R.string.tzone_humiture_SERVICE_MAIN));
 	        if (s!=null)
-	        	return s.getCharacteristic(getUUID(stringUUID)); 
+	        	return s.getCharacteristic(getUUID(stringUUID));
 		}
 		fireError(R.string.rt_t_error_service_not_found);
 		return null;
 	}
 	
-	private void readAll() {
+	private void readAll(String... characteristicUUIDs) {
 		if (gatt!=null && getConnectionState()==BluetoothProfile.STATE_CONNECTED) {
 			BluetoothGattService s = gatt.getService(
 					getUUID(R.string.tzone_humiture_SERVICE_MAIN));
@@ -115,7 +110,7 @@ public class TZoneHumitureDevice extends Device {
 			if (s==null)
 				return;
 		
-			readAllCharacteristics(s);
+			readAllCharacteristics(s, characteristicUUIDs);
 		}
 	}
 	
@@ -140,7 +135,7 @@ public class TZoneHumitureDevice extends Device {
         if (c.getDescriptors().isEmpty())
         	return;
         
-        String descriptorUuid = ((BluetoothGattDescriptor) c.getDescriptors().get(0)).getUuid().toString();
+        String descriptorUuid = c.getDescriptors().get(0).getUuid().toString();
         if (descriptorUuid == null || descriptorUuid == "")
         	return;
         
@@ -191,8 +186,61 @@ public class TZoneHumitureDevice extends Device {
 						d.Temperature,
 						d.Humidity));
 	}
-	
-//_____________________________________________________________________________
+
+
+    private boolean authenticated;
+
+    @Override
+    protected void polling() {
+//        if (!authenticated) {
+//            checkToken("000000".toCharArray());
+//        } else {
+//            readAll(R.string.tzone_humiture_CHARACTERISTIC_TEMPERATURE,
+//                    R.string.tzone_humiture_CHARACTERISTIC_HUMIDITY,
+//                    R.string.tzone_humiture_CHARACTERISTIC_BATTERY);
+//        }
+        polled();
+    }
+
+    @Override
+    public void onReadAll() {
+        super.onReadAll();
+    }
+
+    private ScheduledExecutorService trackingExec;
+    private ScheduledFuture trackingFuture;
+
+    @Override
+    protected void trackingOn() {
+//        if (trackingExec==null)
+//            trackingExec = Executors.newSingleThreadScheduledExecutor();
+//        trackingFuture = trackingExec.scheduleAtFixedRate(this, 0l, 5l, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void run() {
+//        readAll(R.string.tzone_humiture_CHARACTERISTIC_TEMPERATURE,
+//                R.string.tzone_humiture_CHARACTERISTIC_HUMIDITY,
+//                R.string.tzone_humiture_CHARACTERISTIC_BATTERY);
+    }
+
+    @Override
+    protected void trackingOff() {
+//        if (trackingFuture!=null) {
+//            trackingFuture.cancel(true);
+//            trackingFuture = null;
+//        }
+    }
+
+    @Override
+    public void onScan() {
+        super.onScan();
+        update(temperature, humidity, battery,
+                String.format("%2.2f\u00b0C", temperature) + "; "
+                        + String.format("%2.2f%%", humidity));
+    }
+
+    //_____________________________________________________________________________
 //
 // o GATT CALLBACK IMPLEMENTATION
 // | ----------------------------
@@ -204,10 +252,10 @@ public class TZoneHumitureDevice extends Device {
 		
 		super.onConnectionStateChange(gatt, status, newState);
 		
-		//attempt reconnection 1s after an unexpected connection error
+		// attempt reconnection 1s after an unexpected connection error
 		if (newState!=BluetoothGatt.STATE_CONNECTED && status!=BluetoothGatt.GATT_SUCCESS)
 
-			runOnUIThread(
+			runOnThread(
 			//Executors.newSingleThreadScheduledExecutor().schedule(
 				new Runnable() {
 					@Override public void run() {connect();}
@@ -215,21 +263,15 @@ public class TZoneHumitureDevice extends Device {
 			//	1l, TimeUnit.SECONDS);
 			1000l);
 
+        // reset connection variables
+        if (newState==BluetoothGatt.STATE_DISCONNECTED) {
+            authenticated = false;
+            trackingOff();
+        }
+
 	}
-	
-	@Override
-	public synchronized void onServicesDiscovered(BluetoothGatt gatt, int status) {
-		super.onServicesDiscovered(gatt, status);
-		runOnUIThread(new Runnable() {
-			@Override
-			public void run() {
-				checkToken("000000".toCharArray());
-			}
-		});
-		fireUpdate();//fire an update after connection (mainly for the connection status...)
-	}
-	
-	@Override
+
+    @Override
 	public synchronized void onCharacteristicRead(BluetoothGatt gatt,
 			BluetoothGattCharacteristic characteristic, int status) {
 
@@ -243,7 +285,6 @@ public class TZoneHumitureDevice extends Device {
 					ch.GetCharacteristicType(characteristic.getUuid()),
 					characteristic.getValue());
 			copyFromTzone();
-			fireEvent(DeviceEvent.TYPE_DEVICE_UPDATED);
 		}
 		
 	}
@@ -275,9 +316,10 @@ public class TZoneHumitureDevice extends Device {
 		
 		// password check
 		if (characteristic.getUuid().equals(getUUID(R.string.tzone_humiture_CHARACTERISTIC_TOKEN))) {
-			if (status==BluetoothGatt.GATT_SUCCESS)
-				readAll();
-			else
+			if (status==BluetoothGatt.GATT_SUCCESS) {
+                authenticated = true;
+                polling();
+            } else
 				fireError(Utils.getStatusMessage(status));
 		}
 		

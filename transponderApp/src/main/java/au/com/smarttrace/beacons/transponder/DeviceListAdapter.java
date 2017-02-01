@@ -24,12 +24,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import android.content.Context;
+import android.graphics.drawable.LevelListDrawable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 import au.com.smarttrace.beacons.Device;
 import au.com.smarttrace.beacons.DeviceEvent;
@@ -67,16 +69,19 @@ public class DeviceListAdapter extends BaseAdapter implements DeviceListener {
 		
 		LayoutInflater inflater = (LayoutInflater) 
 				context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		View view = inflater.inflate(R.layout.row_device, parent, false);//XXX: needed for multiple ViewStubs 
+		View view = inflater.inflate(R.layout.row_device, parent, false);//false needed for multiple ViewStubs
 		
 		TextView tv = (TextView) view.findViewById(R.id.device_title);
 		tv.setText(device.toString());
 
 		if (device.getBattery()>=0) {
 			tv = (TextView) view.findViewById(R.id.device_battery);
-			tv.setText(String.format("%2d%%", device.getBattery()));
+			tv.setText(String.format("%d%%", device.getBattery()));
 		}
-		
+
+		ImageView iv = (ImageView) view.findViewById(R.id.device_signal);
+		iv.setImageLevel(100+device.getSignal());
+
 		try {
 			ViewStub stub = (ViewStub) view.findViewById(R.id.device_row_content_stub);
 			View content = view.findViewById(R.id.device_row_content);

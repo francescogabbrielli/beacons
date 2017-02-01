@@ -1,26 +1,11 @@
 package au.com.smarttrace.beacons.transponder;
 
-import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NavUtils;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
-
-import android.support.v7.app.ActionBar;
 import android.view.MenuItem;
-
-import au.com.smarttrace.beacons.transponder.dummy.DummyContent;
-
-import java.util.List;
 
 /**
  * An activity representing a list of Recordings. This activity

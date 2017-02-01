@@ -2,9 +2,14 @@ package au.com.smarttrace.beacons.gps;
 
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanResult;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.ResultReceiver;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,17 +28,32 @@ public class GPSDevice extends InternalDevice implements LocationListener {
     public static final String IDENTIFIER = "01_internal_GPS";
 
     private int signal;
-
+    private ResultReceiver receiver;
     private Location location;
+    private String address;
+    LocationCompacter compacter;
 
     public GPSDevice() {
+        compacter = new LocationCompacter();
     }
 
     @Override
-    public Device init(Context context, ScanResult deviceResult) {
+    public Device init(final Context context, ScanResult deviceResult) {
         super.init(context, deviceResult);
         name = context.getResources().getString(R.string.title_gps);
         signal = -100;
+        receiver = new ResultReceiver(new Handler(context.getMainLooper())) {
+            @Override
+            protected void onReceiveResult(int resultCode, Bundle resultData) {
+                String res = resultData.getString(AddressService.EXTRA_RESULT);
+                if (resultCode==AddressService.RESULT_OK) {
+                    address = res;
+                    fireUpdate(res);
+                } else {
+                    Toast.makeText(context, res, Toast.LENGTH_SHORT);
+                }
+            }
+        };
         return this;
     }
 
@@ -56,10 +76,14 @@ public class GPSDevice extends InternalDevice implements LocationListener {
         return location;
     }
 
-    public void setLocation(Location location) {
+    public synchronized void setLocation(Location location) {
         if (location!=null) {
+            if (this.location==null || !compacter.inThreshold(location, this.location)) {
+                address = null;
+                AddressService.start(context, location, receiver);
+            }
             this.location = location;
-            signal = - 100 + (int) (100f/Math.max(location.getAccuracy(), 1f));
+            signal = - (int) (location.getAccuracy()/10);
             fireUpdate(location!=null ? location.toString(): "-");
             addSample(KEY_LOCATION, location);
         }
@@ -77,7 +101,7 @@ public class GPSDevice extends InternalDevice implements LocationListener {
 
     @Override
     public int getConnectionState() {
-        return signal<0 ? BluetoothProfile.STATE_CONNECTED : BluetoothProfile.STATE_DISCONNECTED;//XXX: fake -> TODO: abstract Device hierarchy
+        return signal<-100 ? BluetoothProfile.STATE_DISCONNECTED : BluetoothProfile.STATE_CONNECTED;//XXX: fake -> TODO: abstract Device hierarchy
     }
 
     @Override
@@ -86,19 +110,22 @@ public class GPSDevice extends InternalDevice implements LocationListener {
     }
 
     @Override
-    protected void populateRowContent(View content) {
+    protected synchronized void populateRowContent(View content) {
         TextView tv = (TextView) content.findViewById(R.id.gps_latitude);
         tv.setText(R.string.latitude);
         tv.append(": ");
-        tv.append(location!=null ? String.format("%3.6f", location.getLatitude()) : " - ");
+        tv.append(location!=null ? String.format("%3.2f", location.getLatitude()) : " - ");
         tv = (TextView) content.findViewById(R.id.gps_longitude);
         tv.setText(R.string.longitude);
         tv.append(": ");
-        tv.append(location!=null ? String.format("%3.6f", location.getLongitude()) : " - ");
+        tv.append(location!=null ? String.format("%3.2f", location.getLongitude()) : " - ");
+        tv = (TextView) content.findViewById(R.id.gps_address);
+        tv.setText(address!=null ? address : " - ");
     }
 
     @Override
     public void onLocationChanged(final Location location) {
         setLocation(location);
     }
+
 }

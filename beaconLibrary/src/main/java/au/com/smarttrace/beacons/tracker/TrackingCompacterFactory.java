@@ -21,13 +21,16 @@ public class TrackingCompacterFactory {
     }
 
     public <T> TrackingCompacter<T> getCompacter(Context context, String trackingKey, Class<T> trackingClass) {
-        int id = context.getResources().getIdentifier("compacter." + trackingKey, "string", context.getPackageName());
+        int id = context.getResources().getIdentifier("compacter_" + trackingKey, "string", context.getPackageName());
         if (id!=0)
             try {
+                Log.i("Compacter("+trackingKey+")", "Created: "+context.getResources().getString(id));
                 return (TrackingCompacter<T>) Class.forName(context.getResources().getString(id)).newInstance();
             } catch (Exception e) {
                 Log.e("Compacter("+trackingKey+")", e.toString(), e);
             }
+        else
+            Log.w("Compacter("+trackingKey+")", "Not configured");
         return null;
     }
 }

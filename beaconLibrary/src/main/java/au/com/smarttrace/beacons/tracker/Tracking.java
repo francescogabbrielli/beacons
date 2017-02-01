@@ -86,7 +86,7 @@ public class Tracking {
     }
 
     /**
-     * Add a freshly read sample to this device tracking
+     * Add a freshly read sample to this device trackingOn
      *
      * @param sampleKey
      *              the sample key
@@ -100,7 +100,7 @@ public class Tracking {
     }
 
     /**
-     * Add a sample, read at a specified time, to this device tracking
+     * Add a sample, read at a specified time, to this device trackingOn
      *
      * @param time
      *              the time of the reading
@@ -124,7 +124,7 @@ public class Tracking {
     }
 
     /**
-     * Return all the samples for the current device tracking
+     * Return all the samples for the current device trackingOn
      *
      * @param sampleKey
      *              the key of the sample

@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">Axaet BioSense</string>
+    <string name="sense_bio_device_name">Axaet BioSense</string>
+    <string name="sense_bio_temperature">Temperature</string>
+    <string name="sense_bio_humidity">Humidity</string>
 </resources>

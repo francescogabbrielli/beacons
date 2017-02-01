@@ -75,6 +75,7 @@ public class LocationService extends Service implements
     @Override
     public void onCreate() {
         // Create an instance of GoogleAPIClient.
+        Log.i(TAG, "Creating Location Service");
         if (googleApiClient == null)
             googleApiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)
@@ -87,7 +88,7 @@ public class LocationService extends Service implements
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG, "Starting: " + intent);
+        Log.i(TAG, "Request: " + intent);
         if (intent==null || ACTION_START_SERVICE.equals(intent.getAction())) {
             Log.i(TAG, "request connect");
             connect();
@@ -255,13 +256,16 @@ public class LocationService extends Service implements
 
         LocationServices.FusedLocationApi
                 .removeLocationUpdates(googleApiClient, getGPS());
+
     }
 
     @Override
     public void onResult(@NonNull LocationSettingsResult result) {
         final Status status = result.getStatus();
         final LocationSettingsStates states = result.getLocationSettingsStates();
-        Log.i(TAG, states.toString());
+        Log.i(TAG, status.getStatusCode()
+                +"="+status.getStatusMessage()
+                +": "+states.isGpsPresent()+"/"+states.isGpsUsable());
         switch (status.getStatusCode()) {
             case LocationSettingsStatusCodes.SUCCESS:
                 requestLocation();
@@ -289,6 +293,8 @@ public class LocationService extends Service implements
 
         }
 
+        Log.i(TAG, "request location updates");
+
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 googleApiClient, request, getGPS());
 
@@ -296,7 +302,7 @@ public class LocationService extends Service implements
 
     @Override
     public void onDestroy() {
-        Log.i(TAG, "Stopping Location Service");
+        Log.i(TAG, "Destroying Location Service");
         request = null;
         sendChange(false);
         DeviceManager.getInstance().removeInternalDevice(GPSDevice.IDENTIFIER);

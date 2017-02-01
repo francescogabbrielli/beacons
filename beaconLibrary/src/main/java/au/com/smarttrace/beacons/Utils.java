@@ -25,7 +25,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 public class Utils {
-	
+
+	public final static int GATT_INSUF_RESOURCE = 0x11;
 	public final static int GATT_ERROR = 0x85;
 
 	public final static String PREFS = "prefs";
@@ -68,6 +69,8 @@ public class Utils {
 			return "Write not permitted";
 		case BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED:
 			return "Not supported";
+		case GATT_INSUF_RESOURCE:
+			return "Insufficient resources";
 		case GATT_ERROR:
 			return "GATT error!";
 		case BluetoothGatt.GATT_FAILURE:

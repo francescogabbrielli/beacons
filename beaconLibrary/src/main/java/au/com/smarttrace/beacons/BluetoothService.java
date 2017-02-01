@@ -90,10 +90,10 @@ public class BluetoothService extends Service implements Runnable {
 
 	    @Override
 	    public void onBatchScanResults(List<ScanResult> results) {
-	        for (ScanResult sr : results) {
-	        	Log.d("ScanResult - Results", sr.toString());
-	        	DeviceManager.getInstance().addDevice(getApplicationContext(), sr);
-	        }
+//	        for (ScanResult sr : results) {
+//	        	Log.d("ScanResult - Results", sr.toString());
+//	        	DeviceManager.getInstance().addDevice(getApplicationContext(), sr);
+//	        }
 	    }
 
 		@Override
@@ -187,6 +187,7 @@ public class BluetoothService extends Service implements Runnable {
 		disconnect();
 		DeviceManager.getInstance().onBluetoothOff();
 		scanning = false;
+		executor.shutdownNow();
 		super.onDestroy();
 	}
 
