@@ -19,6 +19,7 @@ import com.google.android.gms.location.LocationListener;
 import au.com.smarttrace.beacons.Device;
 import au.com.smarttrace.beacons.InternalDevice;
 import au.com.smarttrace.beacons.R;
+import au.com.smarttrace.beacons.Utils;
 
 /**
  *
@@ -42,11 +43,14 @@ public class GPSDevice extends InternalDevice implements LocationListener {
         super.init(context, deviceResult);
         name = context.getResources().getString(R.string.title_gps);
         signal = -100;
+        address = Utils.getStringPref(context, Utils.PREF_KEY_ADDRESS);
         receiver = new ResultReceiver(new Handler(context.getMainLooper())) {
             @Override
             protected void onReceiveResult(int resultCode, Bundle resultData) {
                 String res = resultData.getString(AddressService.EXTRA_RESULT);
                 if (resultCode==AddressService.RESULT_OK) {
+                    Utils.resetPref(context, Utils.PREF_KEY_ADDRESS)
+                            .putString(Utils.PREF_KEY_ADDRESS, res).apply();
                     address = res;
                     fireUpdate(res);
                 } else {
@@ -79,7 +83,8 @@ public class GPSDevice extends InternalDevice implements LocationListener {
     public synchronized void setLocation(Location location) {
         if (location!=null) {
             if (this.location==null || !compacter.inThreshold(location, this.location)) {
-                address = null;
+                Utils.resetPref(context, Utils.PREF_KEY_ADDRESS).apply();
+                address = "";
                 AddressService.start(context, location, receiver);
             }
             this.location = location;

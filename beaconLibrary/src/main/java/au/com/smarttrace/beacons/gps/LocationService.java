@@ -121,8 +121,8 @@ public class LocationService extends Service implements
             return (GPSDevice) DeviceManager.getInstance().getDevice(GPSDevice.IDENTIFIER);
         } catch(NoSuchDeviceException e) {
             Log.e(TAG, "GPS not found?", e);
+            return null;
         }
-        return null;
     }
 
 
@@ -205,7 +205,7 @@ public class LocationService extends Service implements
 
     private void sendChange(boolean status) {
         getSharedPreferences(Utils.PREFS, MODE_PRIVATE).edit()
-                .putBoolean(Utils.PREF_KEY_LOCATION_SERVICE_ENABLED, status).commit();
+                .putBoolean(Utils.PREF_KEY_LOCATION_SERVICE_ENABLED, status).apply();
         Intent intent = new Intent(ACTION_LOCATION_STATUS_CHANGE);
         intent.putExtra(KEY_LOCATION_STATUS, status);
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);

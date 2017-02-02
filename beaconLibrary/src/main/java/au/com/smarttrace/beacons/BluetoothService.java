@@ -30,7 +30,9 @@ import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -56,7 +58,7 @@ import android.widget.Toast;
  * 
  * @author Francesco Gabbrielli <francescogabbrielli at gmail>
  */
-public class BluetoothService extends Service implements Runnable {
+public class BluetoothService extends Service {
 
 	private static final String TAG = BluetoothService.class.getSimpleName();
 
@@ -73,12 +75,11 @@ public class BluetoothService extends Service implements Runnable {
 
 	private boolean scanning;
 
-
 	private ScheduledExecutorService executor;
 	ScheduledFuture future;
 
 	/**
-	 * Bluetooth callback to receive the scan results
+	 * Bluetooth callback to onReceive the scan results
 	 */
 	private ScanCallback scanCallback = new ScanCallback() {
 
@@ -110,12 +111,6 @@ public class BluetoothService extends Service implements Runnable {
 		binder = new LocalBinder();
 		scanning = false;
 		executor = Executors.newSingleThreadScheduledExecutor();
-	}
-
-	@Override
-	public void run() {
-		if (btAdapter!=null)
-			Log.d(TAG, "ADAPTER: " + btAdapter.isDiscovering());
 	}
 
 	@Override
@@ -193,7 +188,7 @@ public class BluetoothService extends Service implements Runnable {
 
 	private void sendChange(final boolean status) {
 		SharedPreferences prefs = getSharedPreferences(Utils.PREFS, MODE_PRIVATE);
-		prefs.edit().putBoolean(Utils.PREF_KEY_BLUETOOTH_SERVICE_ENABLED, status).commit();
+		prefs.edit().putBoolean(Utils.PREF_KEY_BLUETOOTH_SERVICE_ENABLED, status).apply();
 		Intent intent = new Intent(ACTION_BLUETOOTH_STATUS_CHANGE);
 		intent.putExtra(KEY_BLUETOOTH_STATUS, status);
 		LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);

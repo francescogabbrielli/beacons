@@ -92,6 +92,14 @@ public class Recording implements DeviceListener {
         trackings = new TreeMap<>();
     }
 
+    public Date getBegin() {
+        return begin;
+    }
+
+    public Date getEnd() {
+        return end;
+    }
+
     public int size() {
         int ret = 0;
         for (Tracking t : trackings.values())

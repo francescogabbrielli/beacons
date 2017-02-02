@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements
                 TextView tv = (TextView) findViewById(R.id.recording_ic_bt);
                 tv.setEnabled(bt);
                 if (bt)
-                    tv.setText(String.format("[%d]", DeviceManager.getInstance().countDevices()-(gps?1:0)));
+                    tv.setText(String.format("(%d)", DeviceManager.getInstance().countDevices()-(gps?1:0)));
                 findViewById(R.id.recording_ic_gps).setEnabled(gps);
 
                 if (!DeviceManager.getInstance().isRecording())

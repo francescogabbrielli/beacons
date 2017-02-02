@@ -97,6 +97,7 @@ public class RecordingManager {
         new AsyncTask<Void, Void, Exception>() {
             long time;
             Recording.Header h;
+
             @Override
             protected Exception doInBackground(Void... params) {
                 try {
@@ -107,6 +108,7 @@ public class RecordingManager {
                         return null;
                     }
                     headers.add(h);
+                    save(newRecording);
                     saveHeaders();
                 } catch(Exception e) {
                     return e;
@@ -139,8 +141,63 @@ public class RecordingManager {
         }.execute();
     }
 
+    /**
+     * Get a recording started at the given time
+     *
+     * @param time
+     *              time in ms
+     * @return
+     *          the recording
+     */
     public Recording getById(long time) {
         return recordings.get(time);
+    }
+
+    public interface Callback {
+        void onReceive(Recording rec);
+    }
+
+    /**
+     * Get a recording started at the given time through a callback
+     *
+     * @param time
+     *              time in ms
+     * @param result
+     *              the callback to pass the result
+     */
+    public void getById(long time, final Callback result) {
+        Recording ret = getById(time);
+        if (ret!=null) {
+            result.onReceive(ret);
+            return;
+        }
+        new AsyncTask<Long, Void, Recording>() {
+
+            private Exception error;
+
+            @Override
+            protected Recording doInBackground(Long... params) {
+                Recording r = null;
+                try {
+                    r = load(params[0]);
+                } catch(IOException e) {
+                    error = e;
+                    cancel(false);
+                }
+                return r;
+            }
+
+            @Override
+            protected void onCancelled() {
+                Toast.makeText(context, error.getLocalizedMessage(), Toast.LENGTH_SHORT);
+            }
+
+            @Override
+            protected void onPostExecute(Recording recording) {
+                result.onReceive(recording);
+            }
+
+        }.execute(time);
     }
 
     public synchronized Recording.Header getHeader(int position) {
@@ -151,7 +208,7 @@ public class RecordingManager {
         return headers.size();
     }
 
-    public synchronized void loadHeaders() throws IOException {
+    private synchronized void loadHeaders() throws IOException {
         Gson gson = new Gson();
         FileReader r = null;
         try {
@@ -163,6 +220,31 @@ public class RecordingManager {
         }
     }
 
+    /**
+     * Load a recording from the storage
+     *
+     * @param timeline
+     *              time of recording
+     * @return
+     *          the recording
+     * @throws IOException
+     *          for I/O problems
+     */
+    public synchronized Recording load(long timeline) throws IOException {
+        Gson gson = new Gson();
+        FileReader r = null;
+        String filename = timeline+".rec";
+        Recording recording = null;
+        try {
+            r = new FileReader(new File(dir, filename));
+            recording = gson.fromJson(r, Recording.class);
+            recordings.put(timeline, recording);
+        } finally {
+            try {r.close();} catch(Exception e) {}
+        }
+        return recording;
+    }
+
     private synchronized void saveHeaders() throws IOException {
         Gson gson = new Gson();
         FileWriter w = null;
@@ -170,6 +252,19 @@ public class RecordingManager {
             Log.i(TAG, "FILE: "+new File(dir, HEADERS_FILE));
             w = new FileWriter(new File(dir, HEADERS_FILE), false);
             gson.toJson(headers, w);
+        } finally {
+            try {w.close();} catch(Exception e) {}
+        }
+    }
+
+    private synchronized void save(Recording recording) throws IOException {
+        Gson gson = new Gson();
+        FileWriter w = null;
+        String filename = recording.begin.getTime()+".rec";
+        try {
+            Log.i(TAG, "FILE: "+new File(dir, filename));
+            w = new FileWriter(new File(dir, filename), false);
+            gson.toJson(recording, w);
         } finally {
             try {w.close();} catch(Exception e) {}
         }

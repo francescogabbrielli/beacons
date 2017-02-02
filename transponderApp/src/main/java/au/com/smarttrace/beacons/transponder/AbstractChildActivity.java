@@ -22,4 +22,15 @@ public abstract class AbstractChildActivity extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
 }

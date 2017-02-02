@@ -23,6 +23,8 @@ public class RecordingListActivity extends AbstractChildActivity {
      */
     private boolean mTwoPane;
 
+    private RecordingRecyclerAdapter adapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -38,9 +40,10 @@ public class RecordingListActivity extends AbstractChildActivity {
 //            }
 //        });
 
-        View recyclerView = findViewById(R.id.recording_list);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recording_list);
         assert recyclerView != null;
-        setupRecyclerView((RecyclerView) recyclerView);
+        adapter = new RecordingRecyclerAdapter(this, mTwoPane);
+        recyclerView.setAdapter(adapter);
 
         if (findViewById(R.id.recording_detail_container) != null) {
             // The detail container view will be present only in the
@@ -61,8 +64,9 @@ public class RecordingListActivity extends AbstractChildActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new RecordingRecyclerAdapter(this, mTwoPane));
+    @Override
+    protected void onDestroy() {
+        adapter.dispose();
+        super.onDestroy();
     }
-
 }

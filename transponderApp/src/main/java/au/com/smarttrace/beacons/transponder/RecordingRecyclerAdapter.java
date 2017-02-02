@@ -18,8 +18,9 @@ import au.com.smarttrace.beacons.tracker.RecordingManager;
 /**
  *
  */
-public class RecordingRecyclerAdapter extends RecyclerView.Adapter<RecordingRecyclerAdapter.ViewHolder>
-                            implements RecordingListener {
+public class RecordingRecyclerAdapter
+        extends RecyclerView.Adapter<RecordingRecyclerAdapter.ViewHolder>
+        implements RecordingListener {
 
     private AppCompatActivity context;
 
@@ -95,6 +96,18 @@ public class RecordingRecyclerAdapter extends RecyclerView.Adapter<RecordingRecy
 
     public void dispose() {
         RecordingManager.getInstance().removeRecordingListener(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof RecordingRecyclerAdapter &&
+                context.getClass().equals(
+                        ((RecordingRecyclerAdapter)obj).context.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return context.getClass().hashCode();
     }
 
 }

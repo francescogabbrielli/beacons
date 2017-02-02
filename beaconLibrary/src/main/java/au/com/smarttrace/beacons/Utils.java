@@ -32,6 +32,7 @@ public class Utils {
 	public final static String PREFS = "prefs";
 	public final static String PREF_KEY_LOCATION_SERVICE_ENABLED = "location_service_enabled";
 	public final static String PREF_KEY_BLUETOOTH_SERVICE_ENABLED = "bluetooth_service_enabled";
+	public final static String PREF_KEY_ADDRESS = "address";
 	
 	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
@@ -80,9 +81,19 @@ public class Utils {
 		}
 	}
 
+	public static SharedPreferences.Editor resetPref(Context context, String key) {
+		SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+		return prefs.edit().remove(key);
+	}
+
 	public static boolean getBooleanPref(Context context, String key) {
 		SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
 		return prefs.getBoolean(key, false);
+	}
+
+	public static String getStringPref(Context context, String key) {
+		SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+		return prefs.getString(key, "");
 	}
 
 }

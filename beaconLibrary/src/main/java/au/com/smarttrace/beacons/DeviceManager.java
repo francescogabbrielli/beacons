@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.TimerTask;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanResult;
@@ -59,10 +58,10 @@ public class DeviceManager {
 	private ArrayList<Device> list;
 	
 	/** A thread for the timer */
-	private HandlerThread timerThread;
+	private HandlerThread btThread;
 	
 	/** Handler for the event firing on the separate event thread */
-	private Handler timerHandler;
+	private Handler btHandler;
 		
 	/** The main handler (main thread) */
 	private Handler mainHandler;
@@ -112,7 +111,7 @@ public class DeviceManager {
 		@Override
 		public void run() {
 			super.run();
-			timerHandler.postDelayed(timedCheck, DELAY_CHECK);
+			btHandler.postDelayed(timedCheck, DELAY_CHECK);
 		}
 		@Override
 		protected void syncRun() {
@@ -122,7 +121,7 @@ public class DeviceManager {
 				long diff = d.getElapsedTime();
 				if (diff > TIME_LIMIT) {
 					Log.i(TAG, "Device inactive for "+(diff/1000l)+"s (" + d.getTitle()+")");
-					mainHandler.post(new Remover(d));
+					btHandler.post(new Remover(d));
 				}
 			}
 		}
@@ -135,7 +134,7 @@ public class DeviceManager {
 		Remover(Device d) {super(d);}
 		@Override
 		public void syncRun() {
-            if (turningOff)
+            if (btOff)
                 return;
 			int pos = Collections.binarySearch(list, device);
 			if (pos>=0) {
@@ -156,7 +155,7 @@ public class DeviceManager {
 		@Override
 		public void syncRun() {
 
-            if (turningOff)
+            if (btOff)
                 return;
 
 			int pos = Collections.binarySearch(list, device);
@@ -268,13 +267,13 @@ public class DeviceManager {
 	 */
 	void fireDeviceEvent(Device source, int eventType, Object data) {
 		final DeviceEvent event = new DeviceEvent(source, eventType, data);
-		mainHandler.post(new SynchronizedTask() {
-			@Override
-			protected void syncRun() {
-				for (DeviceListener listener : listenersList)
+		for (final DeviceListener listener : new LinkedList<>(listenersList))
+			mainHandler.post(new Runnable() {
+				@Override
+				public void run() {
 					listener.onDeviceChange(event);
-			}
-		});
+				}
+			});
 	}
 	
 	/**
@@ -282,25 +281,25 @@ public class DeviceManager {
 	 * //TODO find a better solution
 	 */
 	public synchronized void onBluetoothOn() {
-		if (timerHandler==null) {
-            turningOff = false;
-			timerThread = new HandlerThread("Device Timer Thread");
-			timerThread.start();
-			timerHandler = new Handler(timerThread.getLooper());
-			timerHandler.post(timedCheck);
+		if (btHandler ==null) {
+            btOff = false;
+			btThread = new HandlerThread("BT Thread");
+			btThread.start();
+			btHandler = new Handler(btThread.getLooper());
+			btHandler.post(timedCheck);
 		}
 	}
 
-    private boolean turningOff;
+    private boolean btOff;
 	
 	/**
 	 * Called when bluetooth is turned off
 	 * //TODO find a better solution
 	 */
 	public synchronized void onBluetoothOff() {
-		if (timerHandler!=null) {
-            turningOff = true;
-			timerHandler.removeCallbacks(timedCheck);
+		if (btHandler !=null) {
+            btOff = true;
+			btHandler.removeCallbacks(timedCheck);
 			for (ListIterator<Device> li = list.listIterator(); li.hasNext(); ) {
 				Device d = li.next();
 				if (!(d instanceof InternalDevice)) {
@@ -309,9 +308,9 @@ public class DeviceManager {
 					li.remove();
 				}
 			}
-			timerThread.quitSafely();
-			timerThread = null;
-			timerHandler = null;
+			btThread.quitSafely();
+			btThread = null;
+			btHandler = null;
 		}
 	}
 	
@@ -325,12 +324,12 @@ public class DeviceManager {
 	 * 
 	 * @see Device
 	 */
-	public void addDevice(Context context, ScanResult result) {
+	public synchronized void addDevice(Context context, ScanResult result) {
 
-		if (result.getDevice().getType()!=BluetoothDevice.DEVICE_TYPE_LE)
+		if (btHandler==null || result.getDevice().getType()!=BluetoothDevice.DEVICE_TYPE_LE)
 			return;
 		
-		mainHandler.post(
+		btHandler.post(
 			new Adder(
 				new Device(context, result)));
 	}

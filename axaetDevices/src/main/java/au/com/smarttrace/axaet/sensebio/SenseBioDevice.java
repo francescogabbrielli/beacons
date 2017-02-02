@@ -41,7 +41,7 @@ import au.com.smarttrace.beacons.temperature.TemperatureDevice;
  * [scheduler implemented by reconnecting after disconnection when in {@link#STATUS_POLLING}]
  * <br/>
  * When <i>tracked</i>, the previous scheduling will halt, then the app will connect to the device
- * and subscribe to receive temperature/humidity notifications. On end of trackingOn the app will
+ * and subscribe to onReceive temperature/humidity notifications. On end of trackingOn the app will
  * turn off notifications and resume the previous scheduling.
  * If disconnected while trackingOn the appropriate behaviour will be resumed on re-scan and in a
  * similar way if an internal disconnection occurs, the previous scheduling will resume and thus
