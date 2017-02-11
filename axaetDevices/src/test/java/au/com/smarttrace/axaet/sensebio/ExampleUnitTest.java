@@ -1,4 +1,4 @@
-package au.com.smarttrace.biosense;
+package au.com.smarttrace.axaet.sensebio;
 
 import org.junit.Test;
 

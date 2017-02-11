@@ -16,6 +16,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+
 }
 
 dependencies {
@@ -28,4 +29,5 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.1'
+    androidTestCompile 'junit:junit:4.12'
 }

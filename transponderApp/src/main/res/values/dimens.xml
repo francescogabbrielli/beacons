@@ -26,4 +26,6 @@
     <dimen name="item_width">200dp</dimen>
     <dimen name="text_margin">16dp</dimen>
 
+    <dimen name="panel_margin">3dp</dimen>
+
 </resources>

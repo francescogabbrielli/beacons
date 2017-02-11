@@ -26,11 +26,7 @@ import android.bluetooth.BluetoothManager;
 import android.content.Intent;
 import android.location.LocationManager;
 
-import org.w3c.dom.ls.LSException;
-
 import au.com.smarttrace.beacons.BluetoothService;
-import au.com.smarttrace.beacons.DeviceManager;
-import au.com.smarttrace.beacons.gps.GPSDevice;
 import au.com.smarttrace.beacons.gps.LocationService;
 import au.com.smarttrace.beacons.tracker.RecordingManager;
 
@@ -63,7 +59,7 @@ public class BeaconTransponder extends Application {
 		
 		// check if bluetooth is on and start the bluetooth service
 		if (isBluetoothEnabled()) {
-			Intent intent = new Intent(this, BluetoothService.class);
+			Intent intent = new Intent(BluetoothService.ACTION_SCAN, null, this, BluetoothService.class);
 			startService(intent);
 		}
 
@@ -74,7 +70,7 @@ public class BeaconTransponder extends Application {
 		}
 
 		RecordingManager.getInstance().init(this);
-		
+
 	}
 	
 }

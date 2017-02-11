@@ -123,6 +123,11 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="au.com.smarttrace.beacons.transponder.RecordingListActivity"/>
         </activity>
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyB06D01LAzQK0xGbwWcPsl9K4fgEar93BU"/>
+
     </application>
 
 </manifest>

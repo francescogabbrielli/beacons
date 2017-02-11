@@ -2,33 +2,81 @@ package au.com.smarttrace.beacons.tracker;
 
 import android.content.ComponentCallbacks;
 import android.content.Context;
+import android.location.Location;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import au.com.smarttrace.beacons.gps.GPSDevice;
 
 /**
  *
  */
 public class Tracking {
 
+    public static class Sample<T> {
+        public long time;
+        public T data;
+        public Sample(long time, T data) {
+            this.time = time;
+            this.data = data;
+        }
+
+    }
+
     /**
      *
      * @param <T>
      */
-    public class Data<T> {
+    public static class Data<T> implements Iterable<Sample<T>> {
         List<Long> timeline;
         List<T> data;
         public int size() {
             return data.size();
         }
+        public Data() {
+            timeline = new ArrayList<>();
+            data = new ArrayList<>();
+        }
+        public Data(List<Long> t, List<T> s) {
+            timeline = t;
+            data = s;
+        }
+
+        public T get(int i) {
+            return data.get(i);
+        }
+
+        public Date getDate(int i) {
+            return new Date(timeline.get(i));
+        }
 
         @Override
         public String toString() {
             return data.toString();
+        }
+
+        @Override
+        public Iterator<Sample<T>> iterator() {
+            return new Iterator<Sample<T>>() {
+                Iterator<Long> i1 = timeline.iterator();
+                Iterator<T> i2 = data.iterator();
+                @Override
+                public boolean hasNext() {
+                    return i1.hasNext();
+                }
+                @Override
+                public Sample<T> next() {
+                    return new Sample<>(i1.next(), i2.next());
+                }
+            };
         }
     }
 
@@ -39,11 +87,12 @@ public class Tracking {
         TrackingComponent() {}
         TrackingComponent(String key, Class<T> dataClass) {
             this.dataClass = dataClass;
-            timeline = new ArrayList<>();
-            data = new ArrayList<>();
-            compacter = TrackingCompacterFactory.getInstance().getCompacter(context, key, dataClass);
+            if (context!=null)
+                compacter = dataClass==GPSDevice.Sample.class
+                        ? (TrackingCompacter<T>) GPSDevice.COMPACTER
+                        : TrackingCompacterFactory.getInstance().getCompacter(context, key, dataClass);
         }
-        boolean add(long time, T o) {
+        public boolean add(long time, T o) {
             int index = Collections.binarySearch(timeline, time);
             if (index<0) {
                 if (index==-1) {
@@ -115,11 +164,12 @@ public class Tracking {
         if (value==null)
             return false;
         TrackingComponent e = (TrackingComponent) getSamples(sampleKey, value.getClass());
+        Log.i("Tracking", String.format("adding %s=%s", sampleKey, value));
         return e.add(time, value);
     }
 
     /** Read only */
-    public <T> Data<T> getSamples(String sampleKey) {
+    public Data getSamples(String sampleKey) {
         return getSamples(sampleKey, null);
     }
 
@@ -130,8 +180,6 @@ public class Tracking {
      *              the key of the sample
      * @param sampleClass
      *              the class of the sample
-     * @param <T>
-     *              the data type of the sample
      * @return
      *          the data
      */
@@ -155,4 +203,8 @@ public class Tracking {
         return ret;
     }
 
+    @Override
+    public String toString() {
+        return components.toString();
+    }
 }

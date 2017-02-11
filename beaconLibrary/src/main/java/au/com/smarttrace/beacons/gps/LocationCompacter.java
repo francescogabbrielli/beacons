@@ -7,15 +7,15 @@ import au.com.smarttrace.beacons.tracker.TrackingCompacter;
 /**
  *
  */
-public class LocationCompacter implements TrackingCompacter<Location> {
+public class LocationCompacter implements TrackingCompacter<GPSDevice.Sample> {
 
     protected final static long MAX_TIME_LAG = 5 * 60000l;
-    protected final static double LOCATION_TOLERANCE = 0.001d;
+    protected final static double LOCATION_TOLERANCE = 0.0001d;
 
     @Override
-    public boolean inThreshold(Location o1, Location o2) {
-        return Math.abs(o1.getLatitude()-o2.getLatitude()) < LOCATION_TOLERANCE
-                && Math.abs(o1.getLongitude()-o2.getLongitude()) < LOCATION_TOLERANCE;
+    public boolean inThreshold(GPSDevice.Sample o1, GPSDevice.Sample o2) {
+        return Math.abs(o1.lat-o2.lat) < LOCATION_TOLERANCE
+                && Math.abs(o1.lng-o2.lng) < LOCATION_TOLERANCE;
     }
 
     @Override

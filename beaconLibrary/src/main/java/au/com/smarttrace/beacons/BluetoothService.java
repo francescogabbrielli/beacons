@@ -22,17 +22,15 @@ package au.com.smarttrace.beacons;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -41,14 +39,12 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.widget.Toast;
 
 /**
  * <p>
@@ -62,6 +58,8 @@ public class BluetoothService extends Service {
 
 	private static final String TAG = BluetoothService.class.getSimpleName();
 
+	private static final long DELAY_REPEAT_SCAN = 15l;
+
 	private BluetoothManager btManager;
 	private BluetoothAdapter btAdapter;
 	private BluetoothLeScanner btScanner;
@@ -71,7 +69,13 @@ public class BluetoothService extends Service {
 	public final static String ACTION_BLUETOOTH_STATUS_CHANGE = "action_bluetooth_status_change";
 	public final static String KEY_BLUETOOTH_STATUS = "key_bluetooth_status";
 
-	private LocalBinder binder;
+    /** Start this service */
+    public final static String ACTION_SCAN = "action_start_service";
+
+    /** Re-start BLE scan */
+    public final static String ACTION_RESCAN = "action_rescan";
+
+    private LocalBinder binder;
 
 	private boolean scanning;
 
@@ -116,7 +120,12 @@ public class BluetoothService extends Service {
 	@Override
 	public synchronized int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d(TAG, "Starting: " + intent);
-		connect();
+        if (intent==null || ACTION_SCAN.equals(intent.getAction())) {
+            connect();
+        } else if (ACTION_RESCAN.equals(intent.getAction())) {
+            reconnect();
+        }
+
 		DeviceManager.getInstance().onBluetoothOn();
 		return START_STICKY;
 	}
@@ -124,13 +133,29 @@ public class BluetoothService extends Service {
 	private void connect()  {
 		btScanner = btAdapter.getBluetoothLeScanner();
 		if (btScanner!=null && btAdapter.isEnabled()) {
+
 			Log.d(TAG, "START SCANNING!");
 			btScanner.startScan(btFilters, btSettings, scanCallback);
 			scanning = true;
 			sendChange(true);
-//			future = executor.scheduleAtFixedRate(this, 0l, 2l, TimeUnit.SECONDS);
+
+            //XXX: workaround to avoid bluetooth scan halt
+            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+            Intent intent = new Intent(BluetoothService.ACTION_RESCAN, null,
+                    this, BluetoothService.class);
+            alarm.setExact(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime()+15000l,
+                    PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT));
+
+//			future = executor.schedule(this, DELAY_REPEAT_SCAN, TimeUnit.SECONDS);
 		}
 	}
+
+    private void reconnect() {
+        if (btScanner!=null) {
+            disconnect();
+            connect();
+        }
+    }
 
 	private void disconnect() {
 		if (btScanner != null && btAdapter.isEnabled()) {
@@ -168,11 +193,14 @@ public class BluetoothService extends Service {
         if (btManager == null)
 			btManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
 		btAdapter = btManager.getAdapter();
+
 		ScanSettings.Builder builder = new ScanSettings.Builder()
-				.setScanMode(ScanSettings.SCAN_MODE_BALANCED);
+				.setScanMode(ScanSettings.SCAN_MODE_BALANCED)
+                .setReportDelay(0);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
 			builder.setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
 		btSettings = builder.build();
+
 		btFilters = new ArrayList<>();
 	}
 

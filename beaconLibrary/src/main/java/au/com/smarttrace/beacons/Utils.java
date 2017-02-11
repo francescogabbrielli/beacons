@@ -81,9 +81,14 @@ public class Utils {
 		}
 	}
 
-	public static SharedPreferences.Editor resetPref(Context context, String key) {
+	public static void resetPref(Context context, String key) {
 		SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-		return prefs.edit().remove(key);
+		prefs.edit().remove(key).apply();
+	}
+
+	public static void setStringPref(Context context, String key, String value) {
+		SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+		prefs.edit().putString(key, value).apply();
 	}
 
 	public static boolean getBooleanPref(Context context, String key) {
@@ -95,5 +100,7 @@ public class Utils {
 		SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
 		return prefs.getString(key, "");
 	}
+
+
 
 }

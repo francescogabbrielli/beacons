@@ -20,7 +20,7 @@ public class TrackingCompacterFactory {
 
     }
 
-    public <T> TrackingCompacter<T> getCompacter(Context context, String trackingKey, Class<T> trackingClass) {
+    public <T> TrackingCompacter<T> getCompacter(Context context, String trackingKey, Class<T> dataClass) {
         int id = context.getResources().getIdentifier("compacter_" + trackingKey, "string", context.getPackageName());
         if (id!=0)
             try {

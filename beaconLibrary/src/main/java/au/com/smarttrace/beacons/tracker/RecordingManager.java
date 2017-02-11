@@ -1,12 +1,19 @@
 package au.com.smarttrace.beacons.tracker;
 
 import android.content.Context;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
@@ -20,10 +27,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import au.com.smarttrace.beacons.gps.GPSDevice;
+
 /**
  * Manager for the recordings stored on the phone
  */
-public class RecordingManager {
+public class RecordingManager implements JsonDeserializer<Tracking.Data> {
 
     private final static String TAG = RecordingManager.class.getSimpleName();
 
@@ -154,6 +163,7 @@ public class RecordingManager {
     }
 
     public interface Callback {
+        /** Invoke from the UI thread */
         void onReceive(Recording rec);
     }
 
@@ -165,7 +175,7 @@ public class RecordingManager {
      * @param result
      *              the callback to pass the result
      */
-    public void getById(long time, final Callback result) {
+    public void getById(final long time, final Callback result) {
         Recording ret = getById(time);
         if (ret!=null) {
             result.onReceive(ret);
@@ -181,6 +191,7 @@ public class RecordingManager {
                 try {
                     r = load(params[0]);
                 } catch(IOException e) {
+                    Log.e(TAG, "Not loaded "+time+".rec", e);
                     error = e;
                     cancel(false);
                 }
@@ -188,8 +199,8 @@ public class RecordingManager {
             }
 
             @Override
-            protected void onCancelled() {
-                Toast.makeText(context, error.getLocalizedMessage(), Toast.LENGTH_SHORT);
+            protected void onCancelled(Recording rec) {
+                Toast.makeText(context, "I/O Error", Toast.LENGTH_SHORT);
             }
 
             @Override
@@ -208,12 +219,32 @@ public class RecordingManager {
         return headers.size();
     }
 
+    private Gson buildGson() {
+        return new GsonBuilder()
+                .registerTypeAdapter(Tracking.Data.class, this)
+                .create();
+    }
+
+    @Override
+    public Tracking.Data deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+        JsonObject o = json.getAsJsonObject();
+        List<Long> timeline = context.deserialize(o.get("timeline"), new TypeToken<List<Long>>(){}.getType());
+        List data = null;
+        JsonElement first = o.get("data").getAsJsonArray().get(0);
+        if (first.isJsonObject() && first.getAsJsonObject().has("lat"))
+            data = context.deserialize(o.get("data"), new TypeToken<List<GPSDevice.Sample>>(){}.getType());
+        else
+            data = context.deserialize(o.get("data"), List.class);
+        return new Tracking.Data<>(timeline, data);
+    }
+
     private synchronized void loadHeaders() throws IOException {
         Gson gson = new Gson();
         FileReader r = null;
         try {
             r = new FileReader(new File(dir, HEADERS_FILE));
             Type token = new TypeToken<List<Recording.Header>>(){}.getType();
+            Log.i(TAG, "Loaded "+HEADERS_FILE);
             headers = gson.fromJson(r, token);
         } finally {
             try {r.close();} catch(Exception e) {}
@@ -231,13 +262,15 @@ public class RecordingManager {
      *          for I/O problems
      */
     public synchronized Recording load(long timeline) throws IOException {
-        Gson gson = new Gson();
+        Gson gson = buildGson();
         FileReader r = null;
         String filename = timeline+".rec";
         Recording recording = null;
         try {
             r = new FileReader(new File(dir, filename));
-            recording = gson.fromJson(r, Recording.class);
+            Type token = new TypeToken<Recording>(){}.getType();
+            recording = gson.fromJson(r, token);
+            Log.i(TAG, "Loaded "+filename);
             recordings.put(timeline, recording);
         } finally {
             try {r.close();} catch(Exception e) {}
@@ -249,22 +282,22 @@ public class RecordingManager {
         Gson gson = new Gson();
         FileWriter w = null;
         try {
-            Log.i(TAG, "FILE: "+new File(dir, HEADERS_FILE));
             w = new FileWriter(new File(dir, HEADERS_FILE), false);
             gson.toJson(headers, w);
+            Log.i(TAG, "Savied "+HEADERS_FILE);
         } finally {
             try {w.close();} catch(Exception e) {}
         }
     }
 
     private synchronized void save(Recording recording) throws IOException {
-        Gson gson = new Gson();
+        Gson gson = buildGson();
         FileWriter w = null;
         String filename = recording.begin.getTime()+".rec";
         try {
-            Log.i(TAG, "FILE: "+new File(dir, filename));
             w = new FileWriter(new File(dir, filename), false);
             gson.toJson(recording, w);
+            Log.i(TAG, "Saved "+filename);
         } finally {
             try {w.close();} catch(Exception e) {}
         }

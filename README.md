@@ -87,8 +87,67 @@ user/shipment, to connect to them establishing bidirectional GATT interaction
 	extracted data from the device. This service is very similar to the service present in the DataManager
 	(*see __§0__*)
 
+          APP UI                         EXECUTOR                      GATT SERVICE             CALLBACK THREAD
+        ====*==============================*=================================*========================*===========
+            |                              .                                 .                        .
+            | disconnected                 .                                 .                        .
+            *>>--------[Connect]------------------------------------------->>+                        .
+            .                              .                                 |                        .
+            .                              .                                 +>>---[OnConnection]--->>+
+            .                              .                                 .                        | connected
+            *<<-------------------------------------[FireConnected]---------------------------------<<+
+            .                              .                                 .                        |
+            .                              .                                 *<<----[Discover]------<<+
+            .                              .                                 |                        .
+            .                              .                                 *>>----[OnDiscover]---->>*
+            .                              .                                 .                        | services ok
+            .                              .                                 *<<---(Check PW)-------<<*
+            .                              .                                 |                        .
+        .....................................................................|......................................
+            .                              .                                 |                        .
+            . <if discovered>              .              .                  |                        .
+            *>>-------[Check password]------------------------------------->>*                        .
+            .                              .                                 |                        .
+            .                              .                                 *>>----[OnWriteCh]----->>*
+            .                              .                                 .                        | password set
+            .                              *<<-------------------------------------(ReadCfg)--------<<+
+            .                              |                                 .                        | wrong pw
+            *<<----------------------------+--------[FireError]-------------------------------------<<*
+            .                              |                                 .                        .
+        ...................................|........................................................................
+            .                              |                                 .                        .
+            . <if password>                |                                 .                        .
+            *>>----[ReadCfg]------------->>*                                 .                        .
+            .                              |                                 .                        .
+            .                            +>*>>-------[ReadCh]-------------->>*                        .
+            .<<-------[Progress]-------<<| .                                 |                        .
+            .                            |-next                              |                        .
+            *>---------[Cancel]--------->| .                                 *>>----[OnReadCh]------>>*
+            .<----[ProcessCanceled]-----<| .                                 .                        |
+            .                            +<*<<-----------------------[Notify]-----------------------<<*
+            .                              |                                 .                        .
+            *<<-----[ProcessComplete]----<<*                                 .                        .
+            .                              .                                 .                        .
+        ............................................................................................................
+            .                              .                                 .                        .
+            *>>----[Weak disconnect]----->>*                                 .                        .
+            .                              |                                 .                        .
+            *>---------[Cancel]----------->|                                 .                        .
+            .<------[ProcessCanceled]-----<|                                 .                        .
+            .                              |                                 .                        .
+            *<<---[Condition not met]----<<*>>--------[Disconnect]--------->>*                        .
+            .                              .                                 |                        .
+            *>>-------[Disconnect]----------------------------------------->>*                        .
+            .                              .                                 |                        .
+            .                              .                                 *>>--[OnDisconnection]->>*
+            .                              .                                 .                        | disconnected
+            *<<-----------------------------------[FireDisconnected]--------------------------------<<*
+            .                              .                                 .                        .
+        ............................................................................................................
+
 
 ## 3. When the device disconnects
 
 - Both the DataManager and the GATT data logger service are stopped istantaneously
 - Connection/Disconnection status is treated like other data and sent to the server
+

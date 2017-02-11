@@ -1,17 +1,7 @@
 package au.com.smarttrace.beacons.tracker;
 
-import android.util.Log;
-import android.widget.Toast;
-
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonWriter;
-
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -26,6 +16,8 @@ import au.com.smarttrace.beacons.NoSuchDeviceException;
  *
  */
 public class Recording implements DeviceListener {
+
+    public final static String TAG = Recording.class.getSimpleName();
 
 
     public static class Header implements Comparable<Header> {
@@ -162,6 +154,6 @@ public class Recording implements DeviceListener {
 
     @Override
     public String toString() {
-        return DateFormat.getDateTimeInstance().format(begin);
+        return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(begin);
     }
 }

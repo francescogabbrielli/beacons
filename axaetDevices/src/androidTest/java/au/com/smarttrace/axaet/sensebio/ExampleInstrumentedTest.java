@@ -1,4 +1,4 @@
-package au.com.smarttrace.biosense;
+package au.com.smarttrace.axaet.sensebio;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("au.com.smarttrace.axaetbiosense.test", appContext.getPackageName());
+        assertEquals("au.com.smarttrace.axaet.sensebio.test", appContext.getPackageName());
     }
 }

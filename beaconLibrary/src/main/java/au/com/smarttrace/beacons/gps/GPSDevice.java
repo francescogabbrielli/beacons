@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ResultReceiver;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,6 +21,7 @@ import au.com.smarttrace.beacons.Device;
 import au.com.smarttrace.beacons.InternalDevice;
 import au.com.smarttrace.beacons.R;
 import au.com.smarttrace.beacons.Utils;
+import au.com.smarttrace.beacons.tracker.Tracking;
 
 /**
  *
@@ -31,11 +33,31 @@ public class GPSDevice extends InternalDevice implements LocationListener {
     private int signal;
     private ResultReceiver receiver;
     private Location location;
+    private Sample sample;
     private String address;
-    LocationCompacter compacter;
+    public static LocationCompacter COMPACTER = new LocationCompacter();
 
-    public GPSDevice() {
-        compacter = new LocationCompacter();
+    public static class Sample {
+        public double lat, lng;
+        public float acc;
+        public transient long time;
+        public Sample(double lat, double lng, float acc) {
+            this.lat = lat;
+            this.lng = lng;
+            this.acc = acc;
+            this.time = System.currentTimeMillis();
+        }
+        public Sample(Location location) {
+            this.lat = location.getLatitude();
+            this.lng = location.getLongitude();
+            this.acc = location.getAccuracy();
+            this.time = System.currentTimeMillis();
+        }
+
+        @Override
+        public String toString() {
+            return "("+lat+","+lng+")";
+        }
     }
 
     @Override
@@ -49,12 +71,12 @@ public class GPSDevice extends InternalDevice implements LocationListener {
             protected void onReceiveResult(int resultCode, Bundle resultData) {
                 String res = resultData.getString(AddressService.EXTRA_RESULT);
                 if (resultCode==AddressService.RESULT_OK) {
-                    Utils.resetPref(context, Utils.PREF_KEY_ADDRESS)
-                            .putString(Utils.PREF_KEY_ADDRESS, res).apply();
+                    Utils.setStringPref(context, Utils.PREF_KEY_ADDRESS, res);
                     address = res;
                     fireUpdate(res);
                 } else {
-                    Toast.makeText(context, res, Toast.LENGTH_SHORT);
+                    fireUpdate(location!=null ? location.toString(): "-");
+                    //Toast.makeText(context, res, Toast.LENGTH_SHORT);
                 }
             }
         };
@@ -81,16 +103,21 @@ public class GPSDevice extends InternalDevice implements LocationListener {
     }
 
     public synchronized void setLocation(Location location) {
+        Log.d(toString(), "Location received: "+location);
         if (location!=null) {
-            if (this.location==null || !compacter.inThreshold(location, this.location)) {
-                Utils.resetPref(context, Utils.PREF_KEY_ADDRESS).apply();
+            Sample newSample = new Sample(location);
+            boolean isDistinct = sample==null || !COMPACTER.inThreshold(sample, newSample);
+            boolean isTime = sample==null || COMPACTER.isTime(sample.time, newSample.time);
+            this.location = location;
+            this.sample = newSample;
+            signal = - (int) (location.getAccuracy()/10);
+//
+            if (isDistinct) {
                 address = "";
                 AddressService.start(context, location, receiver);
             }
-            this.location = location;
-            signal = - (int) (location.getAccuracy()/10);
-            fireUpdate(location!=null ? location.toString(): "-");
-            addSample(KEY_LOCATION, location);
+            if (isDistinct || isTime)
+                addSample(KEY_LOCATION, newSample);
         }
     }
 
@@ -133,4 +160,14 @@ public class GPSDevice extends InternalDevice implements LocationListener {
         setLocation(location);
     }
 
+
+    @Override
+    public synchronized void onTrackingStart(Tracking tracking) {
+        super.onTrackingStart(tracking);
+        if (sample!=null) {
+            address = "";
+            AddressService.start(context, location, receiver);
+            addSample(KEY_LOCATION, sample);
+        }
+    }
 }
