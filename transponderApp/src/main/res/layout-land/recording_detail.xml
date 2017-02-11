@@ -1,0 +1,66 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:id="@+id/recording_detail"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:paddingStart="@dimen/activity_horizontal_margin"
+              android:paddingEnd="@dimen/activity_horizontal_margin"
+              android:paddingTop="@dimen/activity_vertical_margin"
+              android:paddingBottom="@dimen/activity_vertical_margin"
+              android:weightSum="10"
+              tools:context="au.com.smarttrace.beacons.transponder.RecordingDetailFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/panel_margin"
+        android:orientation="horizontal"
+        android:background="@drawable/rectangle"
+        android:padding="@dimen/panel_margin"
+        android:elevation="2dp"
+        android:layout_weight="0">
+
+        <TextView
+            android:id="@+id/recording_begin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/recording_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/recording_map"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="@dimen/panel_margin"
+            android:padding="@dimen/panel_margin"
+            android:background="@drawable/rectangle"
+            android:elevation="2dp"
+            android:nestedScrollingEnabled="false"/>
+
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/recording_chart"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="@dimen/panel_margin"
+            android:padding="@dimen/panel_margin"
+            android:background="@drawable/rectangle"
+            android:elevation="2dp"
+            android:nestedScrollingEnabled="false"/>
+
+    </LinearLayout>
+
+</LinearLayout>
