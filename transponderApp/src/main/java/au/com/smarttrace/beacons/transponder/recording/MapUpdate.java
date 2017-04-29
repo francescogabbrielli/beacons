@@ -34,8 +34,9 @@ public class MapUpdate extends Update implements Runnable {
         super(context);
     }
 
-    public void setMap(GoogleMap map) {
+    public Update setMap(GoogleMap map) {
         this.map = map;
+        return this;
     }
 
     @Override
@@ -91,7 +92,7 @@ public class MapUpdate extends Update implements Runnable {
     @Override
     public synchronized void run() {
         Log.d("MAP", "Updated");
-        if (!cos.isEmpty()) {
+        if (map!=null && !cos.isEmpty()) {
             map.addPolyline(po);
             for (CircleOptions co : cos)
                 map.addCircle(co);

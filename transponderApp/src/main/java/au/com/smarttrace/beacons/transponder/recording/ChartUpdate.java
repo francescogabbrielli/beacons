@@ -210,6 +210,11 @@ public class ChartUpdate extends Update implements Runnable {
         return this;
     }
 
+    public synchronized ChartUpdate removeDataset() {
+        this.label = null;
+        return this;
+    }
+
     @Override
     public synchronized void run() {
         Log.d("CHART", "Updated");
@@ -219,7 +224,7 @@ public class ChartUpdate extends Update implements Runnable {
                     new String[]{FROM_LABEL, FROM_COUNT},
                     new int[]{R.id.dataset_label, R.id.dataset_count}));
         spinnerList = null;
-        chart.setData(new LineData(dataMap.get(label)));
+        chart.setData(label!=null ? new LineData(dataMap.get(label)) : null);
         chart.notifyDataSetChanged();
         chart.invalidate();
     }

@@ -130,6 +130,7 @@ public class RecordingManager implements JsonDeserializer<Tracking.Data> {
             @Override
             protected void onCancelled() {
                 //TODO
+                Toast.makeText(context, "Not recorded", Toast.LENGTH_SHORT);
             }
 
             @Override

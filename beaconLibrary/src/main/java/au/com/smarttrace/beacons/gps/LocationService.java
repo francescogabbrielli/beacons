@@ -151,31 +151,32 @@ public class LocationService extends Service implements
         Log.i(TAG, "CONNECTED!");
 
         if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-            LocalBroadcastManager.getInstance(getApplicationContext())
-                    .sendBroadcast(new Intent(ACTION_REQUEST_PERMISSION));
-            return;
+            Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                    googleApiClient);
+
+            if (lastLocation != null)
+                getGPS().setLocation(lastLocation);
+
+            //create request
+            request = new LocationRequest();
+            request.setInterval(25000);
+            request.setFastestInterval(5000);
+            request.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+
+            sendChange(true);
+
+            if(autoStart)
+                startUpdates();
+
+        } else {
+
+            sendAction(ACTION_REQUEST_PERMISSION);
+
         }
-
-        Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(
-                googleApiClient);
-
-        if (lastLocation != null)
-            getGPS().setLocation(lastLocation);
-
-        //create request
-        request = new LocationRequest();
-        request.setInterval(25000);
-        request.setFastestInterval(5000);
-        request.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-
-        sendChange(true);
-
-        if(autoStart)
-            startUpdates();
 
     }
 
@@ -284,19 +285,17 @@ public class LocationService extends Service implements
     private void requestLocation() {
 
         if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
+            Log.i(TAG, "request location updates");
+            LocationServices.FusedLocationApi.requestLocationUpdates(
+                    googleApiClient, request, getGPS());
+
+        } else {
             sendAction(ACTION_REQUEST_PERMISSION);
-            return;
-
         }
-
-        Log.i(TAG, "request location updates");
-
-        LocationServices.FusedLocationApi.requestLocationUpdates(
-                googleApiClient, request, getGPS());
 
     }
 

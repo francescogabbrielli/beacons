@@ -1,10 +1,17 @@
 package au.com.smarttrace.beacons.transponder;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -88,9 +95,9 @@ public class RecordingDetailFragment extends Fragment
             protected Void doInBackground(Recording... params) {
                 Recording rec = params[0];
                 Log.d(Recording.TAG, "display: "+rec);
+                mapUpdate.load(rec);
                 startUpdates(
                         headerUpdate.load(rec),
-                        mapUpdate.load(rec),
                         chartUpdate.load(rec));
                 return null;
             }
@@ -162,14 +169,12 @@ public class RecordingDetailFragment extends Fragment
         Log.d("MAP", "Ready");
         map = googleMap;
         map.setOnMapLoadedCallback(this);
-        mapUpdate.setMap(googleMap);
     }
 
     @Override
     public void onMapLoaded() {
         Log.d("MAP", "Loaded");
-        map.moveCamera(CameraUpdateFactory.newLatLngBounds(AUSTRALIA, 0));
-        startUpdates(READY_MAP);
+        startUpdates(mapUpdate.setMap(map));
     }
 
     @Override
@@ -222,7 +227,7 @@ public class RecordingDetailFragment extends Fragment
         synchronized (this) {
             updates.addAll(Arrays.asList(updatesList));
             readyState |= flag;
-            ok = readyState == READY_ALL;
+            ok = (readyState & READY_FRAGMENT) != 0;
         }
         while (ok) {
             synchronized (this) {
@@ -241,7 +246,7 @@ public class RecordingDetailFragment extends Fragment
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
-
+        startUpdates(chartUpdate.removeDataset());
     }
 
 }

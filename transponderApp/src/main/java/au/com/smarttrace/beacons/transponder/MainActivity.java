@@ -113,8 +113,8 @@ public class MainActivity extends AppCompatActivity implements
                 } else if (LocationService.ACTION_REQUEST_RESOLUTION.equals(intent.getAction())) {
                     Log.i(BeaconTransponder.TAG, "Resolution for location requested?");
                     Status s = intent.getParcelableExtra(LocationService.KEY_PARAM+"_1");
-                    DeviceManager.getInstance().cancelTracking();
-                    ((ToggleButton) findViewById(R.id.recording_button)).setChecked(false);
+//                    DeviceManager.getInstance().cancelTracking();
+//                    ((ToggleButton) findViewById(R.id.recording_button)).setChecked(false);
                     try {
                         s.startResolutionForResult(
                                 MainActivity.this,
